@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSP Tenant Manager</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #0d1b2a;
+      color: white;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.3px; }
+    header span { font-size: 0.78rem; color: #7a9ab8; }
+
+    .container { max-width: 1280px; margin: 32px auto; padding: 0 24px; }
+
+    /* Login card */
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      padding: 32px 36px;
+    }
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 20px; }
+
+    .form-group { display: inline-flex; flex-direction: column; gap: 6px; min-width: 300px; }
+    .form-group label { font-size: 0.78rem; font-weight: 500; color: #555; }
+    .form-group input {
+      padding: 9px 13px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    .form-group input:focus { outline: none; border-color: #4a90d9; }
+
+    .oa-note { font-size: 0.78rem; color: #888; margin-top: 10px; }
+
+    .btn {
+      padding: 9px 22px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn:disabled { opacity: 0.5; cursor: default; }
+    .btn-primary { background: #4a90d9; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #357abd; }
+    .btn-success { background: #27ae60; color: white; }
+    .btn-success:hover { background: #1e8449; }
+
+    .btn-row { margin-top: 18px; display: flex; align-items: center; gap: 14px; }
+
+    .status-msg { font-size: 0.82rem; padding: 6px 12px; border-radius: 6px; }
+    .status-error { background: #fdecea; color: #c0392b; }
+    .status-ok    { background: #e9f7ef; color: #1e8449; }
+    .status-info  { background: #eaf4fb; color: #2471a3; }
+
+    /* Toolbar */
+    #results { margin-top: 28px; display: none; }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .toolbar-left h2 { font-size: 1rem; font-weight: 700; }
+    .chips { display: flex; gap: 8px; margin-top: 6px; }
+    .chip {
+      background: #e8f0fe;
+      color: #2c5faa;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 11px;
+      border-radius: 20px;
+    }
+    .chip.muted { background: #f0f0f0; color: #666; }
+
+    .toolbar-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    #searchInput {
+      padding: 8px 13px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      width: 240px;
+    }
+    #searchInput:focus { outline: none; border-color: #4a90d9; }
+
+    /* Expand/collapse all */
+    .toggle-all {
+      font-size: 0.78rem;
+      color: #4a90d9;
+      cursor: pointer;
+      text-decoration: underline;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+
+    /* ── Tree view ── */
+    .msp-block { margin-bottom: 20px; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+
+    .msp-header {
+      background: #0d1b2a;
+      color: white;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .msp-header:hover { background: #182d42; }
+
+    .msp-icon { font-size: 1rem; }
+    .msp-chevron { font-size: 0.7rem; margin-left: auto; transition: transform 0.2s; }
+    .msp-header.collapsed .msp-chevron { transform: rotate(-90deg); }
+
+    .msp-title { font-weight: 700; font-size: 0.95rem; }
+    .msp-subtitle { font-size: 0.75rem; color: #7a9ab8; margin-top: 1px; }
+
+    .msp-badge {
+      margin-left: auto;
+      background: rgba(255,255,255,0.15);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 11px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
+    /* Tenant rows */
+    .tenant-body {
+      background: white;
+    }
+
+    .tenant-body table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.83rem;
+    }
+
+    .tenant-body thead th {
+      background: #f7f8fa;
+      font-weight: 600;
+      text-align: left;
+      padding: 9px 16px;
+      color: #666;
+      border-bottom: 1px solid #eee;
+      white-space: nowrap;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .tenant-body tbody tr {
+      border-bottom: 1px solid #f3f3f3;
+      transition: background 0.1s;
+    }
+    .tenant-body tbody tr:last-child { border-bottom: none; }
+    .tenant-body tbody tr:hover { background: #f9fbff; }
+    .tenant-body tbody td { padding: 9px 16px; vertical-align: middle; }
+
+    .tenant-id {
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: #888;
+      max-width: 200px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tenant-name { font-weight: 600; color: #1a1a2e; }
+
+    .domain-pill {
+      display: inline-block;
+      background: #eaf4fb;
+      color: #2471a3;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-family: monospace;
+    }
+
+    .users-count {
+      font-weight: 700;
+      color: #1a1a2e;
+      font-size: 0.88rem;
+    }
+    .users-count.na { color: #bbb; font-weight: 400; }
+
+    .status-badge {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .s-LIVE { background: #e9f7ef; color: #1e8449; }
+    .s-SUSPENDED { background: #fdecea; color: #c0392b; }
+    .s-ERROR { background: #fdecea; color: #c0392b; }
+    .s-INIT { background: #fef9e7; color: #b7770d; }
+    .s-MIGRATING { background: #eaf4fb; color: #2471a3; }
+    .s-other { background: #f2f3f4; color: #666; }
+
+    .no-match { text-align: center; padding: 24px; color: #aaa; font-size: 0.85rem; }
+
+    /* Debug panel */
+    #debugPanel {
+      margin-top: 20px;
+      background: #1a1a2e;
+      color: #a8ff78;
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-family: monospace;
+      font-size: 0.75rem;
+      white-space: pre-wrap;
+      display: none;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .debug-toggle {
+      font-size: 0.75rem;
+      color: #888;
+      cursor: pointer;
+      text-decoration: underline;
+      background: none;
+      border: none;
+      margin-top: 10px;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>MSP Tenant Manager</h1>
+  <span>msp.doubleoctopus.io/mt</span>
+</header>
+
+<div class="container">
+
+  <div class="card" id="loginCard">
+    <h2>Connect to MSP Manager</h2>
+    <div class="form-group">
+      <label for="email">Admin Email</label>
+      <input type="email" id="email" placeholder="admin@example.com" onkeydown="if(event.key==='Enter') fetchData()" />
+    </div>
+    <p class="oa-note">Octopus Authentication (oa: true) — no password required.</p>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="loginBtn" onclick="fetchData()">Connect &amp; Load Tenants</button>
+      <span id="statusMsg" class="status-msg" style="display:none"></span>
+    </div>
+  </div>
+
+  <div id="results">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <h2>MSP &amp; Tenant Directory</h2>
+        <div class="chips">
+          <span class="chip" id="chipMsps">— MSPs</span>
+          <span class="chip" id="chipTenants">— Tenants</span>
+          <span class="chip muted" id="chipActive">— Active Users</span>
+          <span class="chip muted" id="chipEnterprise">— Enterprise</span>
+          <span class="chip muted" id="chipStarter">— Starter</span>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <button class="toggle-all" onclick="toggleAll(true)">Expand all</button>
+        <button class="toggle-all" onclick="toggleAll(false)">Collapse all</button>
+        <input type="text" id="searchInput" placeholder="Search tenants or MSPs…" oninput="filterResults()" />
+        <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+      </div>
+    </div>
+
+    <div id="treeView"></div>
+
+    <button class="debug-toggle" onclick="toggleDebug()">Show raw API sample (for field inspection)</button>
+    <div id="debugPanel"></div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+  let allTenants = [];
+  let sampleRecord = null;
+
+  // ── Field extractors ──────────────────────────────────────────────────────
+
+  function extractStr(obj, ...keys) {
+    for (const k of keys) {
+      const v = obj?.[k];
+      if (v && typeof v === 'string') return v;
+    }
+    return null;
+  }
+
+  function getMspName(t) {
+    // msp field may be a nested object or a plain string/id
+    const mspObj = t.msp || t.mspDetails || t.mspInfo || t.reseller || t.parent;
+    if (mspObj) {
+      if (typeof mspObj === 'string') return mspObj;
+      if (typeof mspObj === 'object') {
+        return extractStr(mspObj, 'name','companyName','displayName','title','email') || mspObj.id || 'Unknown MSP';
+      }
+    }
+    return extractStr(t, 'mspName','msp_name','resellerName','parentName') || 'Unknown MSP';
+  }
+
+  function getMspId(t) {
+    const mspObj = t.msp || t.mspDetails || t.mspInfo || t.reseller || t.parent;
+    if (mspObj && typeof mspObj === 'object') return mspObj.id || mspObj._id || null;
+    return t.mspId || t.msp_id || null;
+  }
+
+  function getTenantId(t) {
+    return t.id || t._id || t.tenantId || t.tenant_id || '—';
+  }
+
+  function getTenantName(t) {
+    return extractStr(t, 'orgName','name','tenantName','tenant_name','companyName','company_name','displayName','title')
+      || t.domain || t.subdomain || getTenantId(t);
+  }
+
+  function getDomain(t) {
+    return t.domain || t.subdomain || t.domainName || '—';
+  }
+
+  function getStatus(t) {
+    return t.status || '—';
+  }
+
+  function pickNum(t, ...keys) {
+    for (const k of keys) {
+      // support dot-path like "users.active"
+      let v = t;
+      for (const part of k.split('.')) v = v?.[part];
+      if (typeof v === 'number') return v;
+      if (typeof v === 'string' && v !== '' && !isNaN(Number(v))) return Number(v);
+    }
+    return null;
+  }
+
+  function getActiveUsers(t) {
+    return pickNum(t, 'usersCount.total');
+  }
+
+  function getEnterpriseUsers(t) {
+    return pickNum(t, 'usersCount.enterprise');
+  }
+
+  function getStarterUsers(t) {
+    return pickNum(t, 'usersCount.starters');
+  }
+
+  // kept for backwards-compat in excel/summary
+  function getUserCount(t) {
+    return getActiveUsers(t);
+  }
+
+  function getCreated(t) {
+    const d = t.createdAt || t.created_at || t.createdDate;
+    return d ? new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+  }
+
+  function statusBadge(s) {
+    const cls = s === 'LIVE' ? 's-LIVE'
+      : s === 'SUSPENDED' ? 's-SUSPENDED'
+      : s.startsWith('ERROR') ? 's-ERROR'
+      : s.startsWith('INIT') ? 's-INIT'
+      : s === 'MIGRATING' ? 's-MIGRATING'
+      : 's-other';
+    return `<span class="status-badge ${cls}">${s}</span>`;
+  }
+
+  // ── Grouping ──────────────────────────────────────────────────────────────
+
+  function groupByMsp(tenants) {
+    const map = new Map();
+    for (const t of tenants) {
+      const key = getMspId(t) || getMspName(t);
+      const label = getMspName(t);
+      if (!map.has(key)) map.set(key, { label, tenants: [] });
+      map.get(key).tenants.push(t);
+    }
+    return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  function renderTree(tenants) {
+    const groups = groupByMsp(tenants);
+    const totalActive     = tenants.reduce((s, t) => s + (getActiveUsers(t)     ?? 0), 0);
+    const totalEnterprise = tenants.reduce((s, t) => s + (getEnterpriseUsers(t) ?? 0), 0);
+    const totalStarter    = tenants.reduce((s, t) => s + (getStarterUsers(t)    ?? 0), 0);
+    const hasUsers = tenants.some(t => getActiveUsers(t) != null);
+
+    document.getElementById('chipMsps').textContent       = `${groups.length} MSPs`;
+    document.getElementById('chipTenants').textContent    = `${tenants.length} Tenants`;
+    document.getElementById('chipActive').textContent     = hasUsers ? `${totalActive.toLocaleString()} Active Users`     : 'Active Users N/A';
+    document.getElementById('chipEnterprise').textContent = hasUsers ? `${totalEnterprise.toLocaleString()} Enterprise`   : 'Enterprise N/A';
+    document.getElementById('chipStarter').textContent    = hasUsers ? `${totalStarter.toLocaleString()} Starter`         : 'Starter N/A';
+
+    const container = document.getElementById('treeView');
+    container.innerHTML = '';
+
+    for (const group of groups) {
+      const block = document.createElement('div');
+      block.className = 'msp-block';
+      block.dataset.mspLabel = group.label.toLowerCase();
+
+      const mspActive     = group.tenants.reduce((s, t) => s + (getActiveUsers(t)     ?? 0), 0);
+      const mspEnterprise = group.tenants.reduce((s, t) => s + (getEnterpriseUsers(t) ?? 0), 0);
+      const mspStarter    = group.tenants.reduce((s, t) => s + (getStarterUsers(t)    ?? 0), 0);
+      const mspUserStr = hasUsers ? ` · ${mspActive} active · ${mspEnterprise} enterprise · ${mspStarter} starter` : '';
+
+      const rows = group.tenants.map(t => {
+        const id         = getTenantId(t);
+        const name       = getTenantName(t);
+        const domain     = getDomain(t);
+        const status     = getStatus(t);
+        const active     = getActiveUsers(t);
+        const enterprise = getEnterpriseUsers(t);
+        const starter    = getStarterUsers(t);
+        const created    = getCreated(t);
+        const search     = [group.label, id, name, domain, status].join(' ').toLowerCase();
+        const num = (v) => v != null ? `<span class="users-count">${v.toLocaleString()}</span>` : '<span class="users-count na">—</span>';
+
+        return `<tr data-search="${search}">
+          <td class="tenant-id" title="${id}">${id}</td>
+          <td class="tenant-name">${name}</td>
+          <td><span class="domain-pill">${domain}</span></td>
+          <td>${statusBadge(status)}</td>
+          <td>${num(active)}</td>
+          <td>${num(enterprise)}</td>
+          <td>${num(starter)}</td>
+          <td>${created}</td>
+        </tr>`;
+      }).join('');
+
+      block.innerHTML = `
+        <div class="msp-header" onclick="toggleMsp(this)">
+          <span class="msp-icon">🏢</span>
+          <div>
+            <div class="msp-title">${group.label}</div>
+            <div class="msp-subtitle">${group.tenants.length} tenant${group.tenants.length !== 1 ? 's' : ''}${mspUserStr}</div>
+          </div>
+          <span class="msp-badge">${group.tenants.length}</span>
+          <span class="msp-chevron">▼</span>
+        </div>
+        <div class="tenant-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Tenant ID</th>
+                <th>Name</th>
+                <th>Domain</th>
+                <th>Status</th>
+                <th>Active Users</th>
+                <th>Enterprise Users</th>
+                <th>Starter Users</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+
+      container.appendChild(block);
+    }
+  }
+
+  function toggleMsp(header) {
+    const body = header.nextElementSibling;
+    const collapsed = body.style.display === 'none';
+    body.style.display = collapsed ? '' : 'none';
+    header.classList.toggle('collapsed', !collapsed);
+  }
+
+  function toggleAll(open) {
+    document.querySelectorAll('.msp-header').forEach(h => {
+      h.nextElementSibling.style.display = open ? '' : 'none';
+      h.classList.toggle('collapsed', !open);
+    });
+  }
+
+  function filterResults() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('.msp-block').forEach(block => {
+      const mspMatch = !q || block.dataset.mspLabel.includes(q);
+      let anyRow = false;
+      block.querySelectorAll('tbody tr').forEach(row => {
+        const match = mspMatch || row.dataset.search.includes(q);
+        row.style.display = match ? '' : 'none';
+        if (match) anyRow = true;
+      });
+      block.style.display = anyRow ? '' : 'none';
+      if (anyRow && q) {
+        block.querySelector('.tenant-body').style.display = '';
+        block.querySelector('.msp-header').classList.remove('collapsed');
+      }
+    });
+  }
+
+  // ── Fetch ─────────────────────────────────────────────────────────────────
+
+  function showStatus(msg, type) {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.className = 'status-msg status-' + type;
+    el.style.display = 'inline-block';
+  }
+
+  async function fetchData() {
+    const email = document.getElementById('email').value.trim();
+    if (!email) { showStatus('Enter your admin email.', 'error'); return; }
+
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Connecting…';
+    showStatus('Authenticating…', 'info');
+
+    try {
+      const loginRes = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const loginData = await loginRes.json();
+      if (loginData.error) throw new Error(loginData.error);
+
+      showStatus('Fetching tenants…', 'info');
+      btn.innerHTML = '<span class="spinner"></span>Loading…';
+
+      const tenRes = await fetch('/api/tenants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: loginData.token }),
+      });
+      const tenData = await tenRes.json();
+      if (tenData.error) throw new Error(tenData.error);
+      if (tenData.raw) {
+        showStatus('Unexpected response shape — see debug panel.', 'error');
+        showDebugData(tenData.raw);
+        return;
+      }
+
+      allTenants = tenData.tenants || [];
+      sampleRecord = tenData.sample;
+
+      renderTree(allTenants);
+      showStatus(`Loaded ${allTenants.length} tenants.`, 'ok');
+      document.getElementById('results').style.display = 'block';
+
+      if (sampleRecord) {
+        document.getElementById('debugPanel').textContent =
+          JSON.stringify(sampleRecord, null, 2);
+        // Auto-open if users are not resolving
+        if (getActiveUsers(sampleRecord) == null) {
+          document.getElementById('debugPanel').style.display = 'block';
+        }
+      }
+
+    } catch (e) {
+      showStatus(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Reconnect';
+    }
+  }
+
+  function showDebugData(data) {
+    document.getElementById('debugPanel').textContent = JSON.stringify(data, null, 2);
+    document.getElementById('debugPanel').style.display = 'block';
+    document.getElementById('results').style.display = 'block';
+  }
+
+  function toggleDebug() {
+    const p = document.getElementById('debugPanel');
+    p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  }
+
+  // ── Excel export ──────────────────────────────────────────────────────────
+
+  function downloadExcel() {
+    if (!allTenants.length) { alert('No data to export.'); return; }
+
+    const groups = groupByMsp(allTenants);
+    const wb = XLSX.utils.book_new();
+
+    // All tenants flat
+    const flatRows = [['MSP', 'Tenant ID', 'Tenant Name', 'Domain', 'Status', 'Active Users', 'Enterprise Users', 'Starter Users', 'Created']];
+    for (const g of groups) {
+      for (const t of g.tenants) {
+        flatRows.push([
+          g.label,
+          getTenantId(t),
+          getTenantName(t),
+          getDomain(t),
+          getStatus(t),
+          getActiveUsers(t)     ?? '',
+          getEnterpriseUsers(t) ?? '',
+          getStarterUsers(t)    ?? '',
+          getCreated(t),
+        ]);
+      }
+    }
+    const wsAll = XLSX.utils.aoa_to_sheet(flatRows);
+    wsAll['!cols'] = [28,28,28,24,14,13,16,13,14].map(w => ({ wch: w }));
+    XLSX.utils.book_append_sheet(wb, wsAll, 'All Tenants');
+
+    // MSP summary
+    const sumRows = [['MSP', 'Tenants', 'Active Users', 'Enterprise Users', 'Starter Users', 'Live', 'Suspended', 'Error', 'Other']];
+    for (const g of groups) {
+      const st = (s) => g.tenants.filter(t => getStatus(t).toUpperCase().startsWith(s)).length;
+      const active     = g.tenants.reduce((a, t) => a + (getActiveUsers(t)     ?? 0), 0);
+      const enterprise = g.tenants.reduce((a, t) => a + (getEnterpriseUsers(t) ?? 0), 0);
+      const starter    = g.tenants.reduce((a, t) => a + (getStarterUsers(t)    ?? 0), 0);
+      const live = st('LIVE'), susp = st('SUSPEND'), err = st('ERROR');
+      sumRows.push([g.label, g.tenants.length, active || '', enterprise || '', starter || '', live, susp, err, g.tenants.length - live - susp - err]);
+    }
+    const wsSum = XLSX.utils.aoa_to_sheet(sumRows);
+    wsSum['!cols'] = [28,10,13,16,13,8,10,8,8].map(w => ({ wch: w }));
+    XLSX.utils.book_append_sheet(wb, wsSum, 'MSP Summary');
+
+    XLSX.writeFile(wb, `MSP_Tenants_${new Date().toISOString().slice(0,10)}.xlsx`);
+  }
+</script>
+</body>
+</html>
