@@ -287,6 +287,13 @@
         <h3>Salesforce</h3>
         <div class="form-row">
           <div class="form-group">
+            <label for="sf_url">Salesforce URL</label>
+            <input type="text" id="sf_url" placeholder="https://yourorg.lightning.force.com/" />
+            <span class="field-note">Your org's Lightning URL — used to target the correct instance</span>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:14px">
+          <div class="form-group">
             <label for="sf_username">Salesforce Username (Email)</label>
             <input type="email" id="sf_username" placeholder="user@company.com" />
           </div>
@@ -297,7 +304,7 @@
           <div class="form-group">
             <label for="sf_token">Security Token</label>
             <input type="password" id="sf_token" placeholder="Token appended to password" />
-            <span class="field-note">Found in SF → Settings → My Personal Information → Reset Security Token</span>
+            <span class="field-note">SF → Settings → My Personal Information → Reset Security Token</span>
           </div>
         </div>
         <div style="margin-top:14px">
@@ -613,8 +620,9 @@ async function loadSettings() {
   try {
     const res = await fetch('/api/creds/load');
     const c = await res.json();
-    if (c.msp_email)    document.getElementById('email').value    = c.msp_email;
-    if (c.msp_email)    document.getElementById('s_email').value  = c.msp_email;
+    if (c.msp_email)   { document.getElementById('email').value    = c.msp_email;
+                         document.getElementById('s_email').value  = c.msp_email; }
+    if (c.sf_url)       document.getElementById('sf_url').value      = c.sf_url;
     if (c.sf_username)  document.getElementById('sf_username').value = c.sf_username;
     if (c.sf_sandbox)   document.getElementById('sf_sandbox').checked = c.sf_sandbox;
   } catch(e) { /* no saved creds yet */ }
@@ -623,6 +631,7 @@ async function loadSettings() {
 async function saveSettings() {
   const payload = {
     msp_email:   document.getElementById('s_email').value.trim(),
+    sf_url:      document.getElementById('sf_url').value.trim(),
     sf_username: document.getElementById('sf_username').value.trim(),
     sf_password: document.getElementById('sf_password').value,
     sf_token:    document.getElementById('sf_token').value,
@@ -641,6 +650,7 @@ async function saveSettings() {
 
 async function testSalesforce() {
   const payload = {
+    sf_url:      document.getElementById('sf_url').value.trim(),
     sf_username: document.getElementById('sf_username').value.trim(),
     sf_password: document.getElementById('sf_password').value,
     sf_token:    document.getElementById('sf_token').value,

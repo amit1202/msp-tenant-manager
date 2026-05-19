@@ -150,13 +150,25 @@ def tenants():
 
 def _get_sf(creds=None):
     from simple_salesforce import Salesforce
+    from urllib.parse import urlparse
     if creds is None:
         creds = load_creds()
+
+    # Derive My Domain from the SF URL if provided
+    # e.g. https://secretdoubleoctopus.lightning.force.com/ → domain = 'secretdoubleoctopus.my'
+    domain = "test" if creds.get("sf_sandbox") else "login"
+    sf_url = creds.get("sf_url", "").strip().rstrip("/")
+    if sf_url:
+        hostname = urlparse(sf_url).hostname or ""
+        subdomain = hostname.split(".")[0]
+        if subdomain:
+            domain = f"{subdomain}.my"
+
     return Salesforce(
         username=creds["sf_username"],
         password=creds["sf_password"],
         security_token=creds.get("sf_token", ""),
-        domain="test" if creds.get("sf_sandbox") else "login",
+        domain=domain,
     )
 
 
