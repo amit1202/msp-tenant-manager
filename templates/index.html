@@ -6,215 +6,108 @@
   <title>MSP Tenant Manager</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f0f2f5;
-      color: #1a1a2e;
-      min-height: 100vh;
-    }
-
-    header {
-      background: #0d1b2a;
-      color: white;
-      padding: 14px 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    header h1 { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.3px; }
+    /* ── Header ── */
+    header { background: #0d1b2a; color: white; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 1.1rem; font-weight: 600; }
     header span { font-size: 0.78rem; color: #7a9ab8; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .settings-btn { background: rgba(255,255,255,0.1); border: none; color: white; padding: 7px 14px; border-radius: 7px; cursor: pointer; font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: background 0.15s; }
+    .settings-btn:hover { background: rgba(255,255,255,0.2); }
 
-    .container { max-width: 1280px; margin: 32px auto; padding: 0 24px; }
+    /* ── Tabs ── */
+    .tabs { background: #0d1b2a; padding: 0 32px; display: flex; gap: 4px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .tab { padding: 10px 20px; color: #7a9ab8; font-size: 0.85rem; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; transition: color 0.15s; }
+    .tab:hover { color: #fff; }
+    .tab.active { color: #fff; border-bottom-color: #4a90d9; }
 
-    /* Login card */
-    .card {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-      padding: 32px 36px;
-    }
-    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 20px; }
+    /* ── Layout ── */
+    .container { max-width: 1280px; margin: 28px auto; padding: 0 24px; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
 
-    .form-group { display: inline-flex; flex-direction: column; gap: 6px; min-width: 300px; }
-    .form-group label { font-size: 0.78rem; font-weight: 500; color: #555; }
-    .form-group input {
-      padding: 9px 13px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 0.9rem;
+    /* ── Cards ── */
+    .card { background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); padding: 28px 32px; }
+    .card h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 20px; color: #0d1b2a; }
+    .card-section { margin-bottom: 28px; padding-bottom: 28px; border-bottom: 1px solid #f0f0f0; }
+    .card-section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+    .card-section h3 { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 16px; }
+
+    /* ── Form elements ── */
+    .form-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 5px; }
+    .form-group.narrow { flex: 0 0 160px; min-width: 0; }
+    .form-group label { font-size: 0.78rem; font-weight: 600; color: #555; }
+    .form-group input[type=text], .form-group input[type=email], .form-group input[type=password] {
+      padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.88rem; transition: border-color 0.15s;
     }
     .form-group input:focus { outline: none; border-color: #4a90d9; }
+    .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+    .toggle-row label { font-size: 0.85rem; color: #444; cursor: pointer; }
 
-    .oa-note { font-size: 0.78rem; color: #888; margin-top: 10px; }
+    /* Toggle switch */
+    .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; border-radius: 22px; transition: 0.2s; }
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.2s; }
+    input:checked + .slider { background: #4a90d9; }
+    input:checked + .slider:before { transform: translateX(18px); }
 
-    .btn {
-      padding: 9px 22px;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.88rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s, opacity 0.15s;
-    }
-    .btn:disabled { opacity: 0.5; cursor: default; }
+    /* ── Buttons ── */
+    .btn { padding: 9px 20px; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.15s, opacity 0.15s; }
+    .btn:disabled { opacity: 0.45; cursor: default; }
     .btn-primary { background: #4a90d9; color: white; }
     .btn-primary:hover:not(:disabled) { background: #357abd; }
     .btn-success { background: #27ae60; color: white; }
-    .btn-success:hover { background: #1e8449; }
+    .btn-success:hover:not(:disabled) { background: #1e8449; }
+    .btn-outline { background: white; color: #4a90d9; border: 1.5px solid #4a90d9; }
+    .btn-outline:hover:not(:disabled) { background: #eaf4fb; }
+    .btn-sf { background: #00a1e0; color: white; }
+    .btn-sf:hover:not(:disabled) { background: #0181b2; }
+    .btn-row { margin-top: 18px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
-    .btn-row { margin-top: 18px; display: flex; align-items: center; gap: 14px; }
-
-    .status-msg { font-size: 0.82rem; padding: 6px 12px; border-radius: 6px; }
+    /* ── Status messages ── */
+    .status-msg { font-size: 0.82rem; padding: 6px 12px; border-radius: 6px; display: inline-block; }
     .status-error { background: #fdecea; color: #c0392b; }
     .status-ok    { background: #e9f7ef; color: #1e8449; }
     .status-info  { background: #eaf4fb; color: #2471a3; }
+    .status-warn  { background: #fef9e7; color: #9a6700; }
 
-    /* Toolbar */
-    #results { margin-top: 28px; display: none; }
-
-    .toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
+    /* ── Toolbar ── */
+    .toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
     .toolbar-left h2 { font-size: 1rem; font-weight: 700; }
-    .chips { display: flex; gap: 8px; margin-top: 6px; }
-    .chip {
-      background: #e8f0fe;
-      color: #2c5faa;
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 3px 11px;
-      border-radius: 20px;
-    }
+    .chips { display: flex; gap: 7px; margin-top: 6px; flex-wrap: wrap; }
+    .chip { background: #e8f0fe; color: #2c5faa; font-size: 0.73rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
     .chip.muted { background: #f0f0f0; color: #666; }
-
     .toolbar-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    #searchInput {
-      padding: 8px 13px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      width: 240px;
-    }
+    #searchInput { padding: 8px 13px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem; width: 220px; }
     #searchInput:focus { outline: none; border-color: #4a90d9; }
-
-    /* Expand/collapse all */
-    .toggle-all {
-      font-size: 0.78rem;
-      color: #4a90d9;
-      cursor: pointer;
-      text-decoration: underline;
-      background: none;
-      border: none;
-      padding: 0;
-    }
+    .toggle-all { font-size: 0.78rem; color: #4a90d9; cursor: pointer; text-decoration: underline; background: none; border: none; padding: 0; }
 
     /* ── Tree view ── */
-    .msp-block { margin-bottom: 20px; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
-
-    .msp-header {
-      background: #0d1b2a;
-      color: white;
-      padding: 14px 20px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      cursor: pointer;
-      user-select: none;
-      transition: background 0.15s;
-    }
+    .msp-block { margin-bottom: 18px; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+    .msp-header { background: #0d1b2a; color: white; padding: 13px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; transition: background 0.15s; }
     .msp-header:hover { background: #182d42; }
-
-    .msp-icon { font-size: 1rem; }
-    .msp-chevron { font-size: 0.7rem; margin-left: auto; transition: transform 0.2s; }
     .msp-header.collapsed .msp-chevron { transform: rotate(-90deg); }
-
-    .msp-title { font-weight: 700; font-size: 0.95rem; }
-    .msp-subtitle { font-size: 0.75rem; color: #7a9ab8; margin-top: 1px; }
-
-    .msp-badge {
-      margin-left: auto;
-      background: rgba(255,255,255,0.15);
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 3px 11px;
-      border-radius: 12px;
-      white-space: nowrap;
-    }
-
-    /* Tenant rows */
-    .tenant-body {
-      background: white;
-    }
-
-    .tenant-body table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.83rem;
-    }
-
-    .tenant-body thead th {
-      background: #f7f8fa;
-      font-weight: 600;
-      text-align: left;
-      padding: 9px 16px;
-      color: #666;
-      border-bottom: 1px solid #eee;
-      white-space: nowrap;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-    }
-
-    .tenant-body tbody tr {
-      border-bottom: 1px solid #f3f3f3;
-      transition: background 0.1s;
-    }
+    .msp-icon { font-size: 1rem; }
+    .msp-chevron { font-size: 0.7rem; transition: transform 0.2s; }
+    .msp-title { font-weight: 700; font-size: 0.92rem; }
+    .msp-subtitle { font-size: 0.73rem; color: #7a9ab8; margin-top: 2px; }
+    .msp-badge { margin-left: auto; background: rgba(255,255,255,0.15); font-size: 0.73rem; font-weight: 600; padding: 3px 10px; border-radius: 12px; white-space: nowrap; }
+    .tenant-body { background: white; }
+    .tenant-body table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .tenant-body thead th { background: #f7f8fa; font-weight: 600; text-align: left; padding: 9px 14px; color: #666; border-bottom: 1px solid #eee; white-space: nowrap; font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.4px; }
+    .tenant-body tbody tr { border-bottom: 1px solid #f3f3f3; transition: background 0.1s; }
     .tenant-body tbody tr:last-child { border-bottom: none; }
     .tenant-body tbody tr:hover { background: #f9fbff; }
-    .tenant-body tbody td { padding: 9px 16px; vertical-align: middle; }
-
-    .tenant-id {
-      font-family: monospace;
-      font-size: 0.75rem;
-      color: #888;
-      max-width: 200px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
+    .tenant-body tbody td { padding: 8px 14px; vertical-align: middle; }
+    .tenant-id { font-family: monospace; font-size: 0.73rem; color: #aaa; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .tenant-name { font-weight: 600; color: #1a1a2e; }
-
-    .domain-pill {
-      display: inline-block;
-      background: #eaf4fb;
-      color: #2471a3;
-      font-size: 0.75rem;
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-family: monospace;
-    }
-
-    .users-count {
-      font-weight: 700;
-      color: #1a1a2e;
-      font-size: 0.88rem;
-    }
-    .users-count.na { color: #bbb; font-weight: 400; }
-
-    .status-badge {
-      display: inline-block;
-      padding: 2px 9px;
-      border-radius: 10px;
-      font-size: 0.72rem;
-      font-weight: 700;
-    }
+    .domain-pill { display: inline-block; background: #eaf4fb; color: #2471a3; font-size: 0.73rem; padding: 2px 8px; border-radius: 6px; font-family: monospace; }
+    .users-count { font-weight: 700; }
+    .users-count.na { color: #ccc; font-weight: 400; }
+    .status-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; }
     .s-LIVE { background: #e9f7ef; color: #1e8449; }
     .s-SUSPENDED { background: #fdecea; color: #c0392b; }
     .s-ERROR { background: #fdecea; color: #c0392b; }
@@ -222,441 +115,558 @@
     .s-MIGRATING { background: #eaf4fb; color: #2471a3; }
     .s-other { background: #f2f3f4; color: #666; }
 
-    .no-match { text-align: center; padding: 24px; color: #aaa; font-size: 0.85rem; }
+    /* ── Sync results ── */
+    #syncPanel { margin-top: 24px; display: none; }
+    .sync-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .sync-header h3 { font-size: 0.95rem; font-weight: 700; }
+    .sync-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+    .sync-stat { font-size: 0.78rem; font-weight: 700; padding: 4px 12px; border-radius: 14px; }
+    .ss-created  { background: #e9f7ef; color: #1e8449; }
+    .ss-updated  { background: #eaf4fb; color: #2471a3; }
+    .ss-ok       { background: #f0f0f0; color: #555; }
+    .ss-not_found{ background: #fef9e7; color: #9a6700; }
+    .ss-error    { background: #fdecea; color: #c0392b; }
 
-    /* Debug panel */
-    #debugPanel {
-      margin-top: 20px;
-      background: #1a1a2e;
-      color: #a8ff78;
-      border-radius: 8px;
-      padding: 16px 20px;
-      font-family: monospace;
-      font-size: 0.75rem;
-      white-space: pre-wrap;
-      display: none;
-      max-height: 400px;
-      overflow-y: auto;
-    }
-    .debug-toggle {
-      font-size: 0.75rem;
-      color: #888;
-      cursor: pointer;
-      text-decoration: underline;
-      background: none;
-      border: none;
-      margin-top: 10px;
-    }
+    .sync-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+    .sync-table thead th { background: #f7f8fa; font-weight: 600; text-align: left; padding: 9px 14px; color: #666; border-bottom: 1px solid #eee; font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.4px; }
+    .sync-table tbody tr { border-bottom: 1px solid #f3f3f3; }
+    .sync-table tbody tr:last-child { border-bottom: none; }
+    .sync-table tbody td { padding: 8px 14px; vertical-align: middle; }
+    .row-msp td { background: #f7f8fa; font-weight: 700; }
+    .action-badge { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; }
+    .a-created   { background: #e9f7ef; color: #1e8449; }
+    .a-updated   { background: #eaf4fb; color: #2471a3; }
+    .a-ok        { background: #f0f0f0; color: #555; }
+    .a-not_found { background: #fef9e7; color: #9a6700; }
+    .a-error     { background: #fdecea; color: #c0392b; }
+    .a-warning   { background: #fef9e7; color: #9a6700; }
 
-    /* Spinner */
-    .spinner {
-      display: inline-block;
-      width: 16px; height: 16px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
-    }
+    /* ── Spinner ── */
+    .spinner { display: inline-block; width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 5px; }
+    .spinner-dark { border-color: rgba(0,0,0,0.1); border-top-color: #4a90d9; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Debug ── */
+    #debugPanel { margin-top: 16px; background: #1a1a2e; color: #a8ff78; border-radius: 8px; padding: 14px 18px; font-family: monospace; font-size: 0.73rem; white-space: pre-wrap; display: none; max-height: 360px; overflow-y: auto; }
+    .debug-toggle { font-size: 0.73rem; color: #aaa; cursor: pointer; text-decoration: underline; background: none; border: none; margin-top: 8px; display: block; }
+
+    /* note under field */
+    .field-note { font-size: 0.73rem; color: #aaa; margin-top: 3px; }
   </style>
 </head>
 <body>
 
 <header>
   <h1>MSP Tenant Manager</h1>
-  <span>msp.doubleoctopus.io/mt</span>
+  <div class="header-right">
+    <span>msp.doubleoctopus.io/mt</span>
+  </div>
 </header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('tenants')">🏢 Tenants</div>
+  <div class="tab" onclick="switchTab('sync')">☁️ Salesforce Sync</div>
+  <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
+</div>
 
 <div class="container">
 
-  <div class="card" id="loginCard">
-    <h2>Connect to MSP Manager</h2>
-    <div class="form-group">
-      <label for="email">Admin Email</label>
-      <input type="email" id="email" placeholder="admin@example.com" onkeydown="if(event.key==='Enter') fetchData()" />
-    </div>
-    <p class="oa-note">Octopus Authentication (oa: true) — no password required.</p>
-    <div class="btn-row">
-      <button class="btn btn-primary" id="loginBtn" onclick="fetchData()">Connect &amp; Load Tenants</button>
-      <span id="statusMsg" class="status-msg" style="display:none"></span>
-    </div>
-  </div>
+  <!-- ══════════════════════════════ TENANTS TAB ══════════════════════════════ -->
+  <div class="tab-panel active" id="tab-tenants">
 
-  <div id="results">
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <h2>MSP &amp; Tenant Directory</h2>
-        <div class="chips">
-          <span class="chip" id="chipMsps">— MSPs</span>
-          <span class="chip" id="chipTenants">— Tenants</span>
-          <span class="chip muted" id="chipActive">— Active Users</span>
-          <span class="chip muted" id="chipEnterprise">— Enterprise</span>
-          <span class="chip muted" id="chipStarter">— Starter</span>
+    <div class="card" style="margin-bottom:24px">
+      <h2>Connect to MSP Manager</h2>
+      <div class="form-row">
+        <div class="form-group" style="max-width:360px">
+          <label for="email">Admin Email</label>
+          <input type="email" id="email" placeholder="admin@example.com" onkeydown="if(event.key==='Enter') fetchData()" />
         </div>
       </div>
-      <div class="toolbar-right">
-        <button class="toggle-all" onclick="toggleAll(true)">Expand all</button>
-        <button class="toggle-all" onclick="toggleAll(false)">Collapse all</button>
-        <input type="text" id="searchInput" placeholder="Search tenants or MSPs…" oninput="filterResults()" />
-        <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+      <p class="field-note" style="margin-top:8px">Octopus Authentication (oa: true) — no password required.</p>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="loginBtn" onclick="fetchData()">Connect &amp; Load Tenants</button>
+        <span id="statusMsg" class="status-msg" style="display:none"></span>
       </div>
     </div>
 
-    <div id="treeView"></div>
+    <div id="results" style="display:none">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <h2>MSP &amp; Tenant Directory</h2>
+          <div class="chips">
+            <span class="chip" id="chipMsps">— MSPs</span>
+            <span class="chip" id="chipTenants">— Tenants</span>
+            <span class="chip muted" id="chipActive">—</span>
+            <span class="chip muted" id="chipEnterprise">—</span>
+            <span class="chip muted" id="chipStarter">—</span>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <button class="toggle-all" onclick="toggleAll(true)">Expand all</button>
+          <button class="toggle-all" onclick="toggleAll(false)">Collapse all</button>
+          <input type="text" id="searchInput" placeholder="Search tenants or MSPs…" oninput="filterResults()" />
+          <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+          <button class="btn btn-sf" id="syncBtn" onclick="startSync()">Sync to Salesforce</button>
+        </div>
+      </div>
+      <div id="treeView"></div>
+      <button class="debug-toggle" onclick="toggleDebug()">Show raw API sample</button>
+      <div id="debugPanel"></div>
+    </div>
 
-    <button class="debug-toggle" onclick="toggleDebug()">Show raw API sample (for field inspection)</button>
-    <div id="debugPanel"></div>
   </div>
 
-</div>
+  <!-- ══════════════════════════════ SYNC TAB ══════════════════════════════ -->
+  <div class="tab-panel" id="tab-sync">
+
+    <div class="card" style="margin-bottom:24px">
+      <h2>Salesforce Sync</h2>
+
+      <div class="card-section">
+        <h3>What will be synced</h3>
+        <ul style="font-size:0.85rem;line-height:2;padding-left:20px;color:#444">
+          <li>For each <strong>MSP</strong>: verify account exists in SF, set parent to <em>SDO - MSP</em></li>
+          <li>For each <strong>Tenant</strong>: find or create account, set parent to MSP account</li>
+          <li>Update <strong>License Pool</strong> &amp; <strong>Licenses In Use</strong> with total active users</li>
+          <li>Check <strong>Active_production</strong> and <strong>Managed_By_MSP</strong> fields</li>
+        </ul>
+      </div>
+
+      <div class="card-section">
+        <h3>Status</h3>
+        <div id="syncPreStatus" class="status-msg status-info">Load tenants first, then click "Sync to Salesforce".</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-sf" id="syncBtn2" onclick="startSync()" disabled>Sync to Salesforce</button>
+        <span id="syncStatusMsg" class="status-msg" style="display:none"></span>
+      </div>
+    </div>
+
+    <div id="syncPanel">
+      <div class="sync-header">
+        <h3>Sync Results</h3>
+        <div class="sync-stats" id="syncStats"></div>
+      </div>
+      <table class="sync-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>MSP</th>
+            <th>Action</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody id="syncTableBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════ SETTINGS TAB ══════════════════════════════ -->
+  <div class="tab-panel" id="tab-settings">
+
+    <div class="card">
+      <h2>Settings &amp; Saved Credentials</h2>
+
+      <!-- MSP Manager -->
+      <div class="card-section">
+        <h3>MSP Manager</h3>
+        <div class="form-row">
+          <div class="form-group" style="max-width:360px">
+            <label for="s_email">Admin Email</label>
+            <input type="email" id="s_email" placeholder="admin@example.com" />
+            <span class="field-note">Pre-fills the login form on next visit</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Salesforce -->
+      <div class="card-section">
+        <h3>Salesforce</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sf_username">Salesforce Username (Email)</label>
+            <input type="email" id="sf_username" placeholder="user@company.com" />
+          </div>
+          <div class="form-group">
+            <label for="sf_password">Password</label>
+            <input type="password" id="sf_password" placeholder="••••••••" />
+          </div>
+          <div class="form-group">
+            <label for="sf_token">Security Token</label>
+            <input type="password" id="sf_token" placeholder="Token appended to password" />
+            <span class="field-note">Found in SF → Settings → My Personal Information → Reset Security Token</span>
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <div class="toggle-row">
+            <label class="switch">
+              <input type="checkbox" id="sf_sandbox" />
+              <span class="slider"></span>
+            </label>
+            <label for="sf_sandbox">Use Sandbox (test.salesforce.com)</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+        <button class="btn btn-outline" onclick="testSalesforce()">Test Salesforce Connection</button>
+        <span id="settingsStatus" class="status-msg" style="display:none"></span>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /container -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-  let allTenants = [];
-  let sampleRecord = null;
+// ── State ─────────────────────────────────────────────────────────────────────
+let allTenants = [];
+let sampleRecord = null;
+let currentToken = "";
 
-  // ── Field extractors ──────────────────────────────────────────────────────
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['tenants','sync','settings'][i] === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
 
-  function extractStr(obj, ...keys) {
-    for (const k of keys) {
-      const v = obj?.[k];
-      if (v && typeof v === 'string') return v;
-    }
-    return null;
+// ── Field extractors ──────────────────────────────────────────────────────────
+function pickNum(t, ...keys) {
+  for (const k of keys) {
+    let v = t;
+    for (const part of k.split('.')) v = v?.[part];
+    if (typeof v === 'number') return v;
+    if (typeof v === 'string' && v !== '' && !isNaN(Number(v))) return Number(v);
   }
-
-  function getMspName(t) {
-    // msp field may be a nested object or a plain string/id
-    const mspObj = t.msp || t.mspDetails || t.mspInfo || t.reseller || t.parent;
-    if (mspObj) {
-      if (typeof mspObj === 'string') return mspObj;
-      if (typeof mspObj === 'object') {
-        return extractStr(mspObj, 'name','companyName','displayName','title','email') || mspObj.id || 'Unknown MSP';
-      }
-    }
-    return extractStr(t, 'mspName','msp_name','resellerName','parentName') || 'Unknown MSP';
+  return null;
+}
+function getMspName(t) {
+  const msp = t.msp || t.mspDetails || t.reseller || t.parent;
+  if (msp) {
+    if (typeof msp === 'string') return msp;
+    if (typeof msp === 'object') return msp.name || msp.companyName || msp.id || 'Unknown MSP';
   }
-
-  function getMspId(t) {
-    const mspObj = t.msp || t.mspDetails || t.mspInfo || t.reseller || t.parent;
-    if (mspObj && typeof mspObj === 'object') return mspObj.id || mspObj._id || null;
-    return t.mspId || t.msp_id || null;
+  return t.mspName || t.msp_name || 'Unknown MSP';
+}
+function getMspId(t) {
+  const msp = t.msp || t.mspDetails;
+  if (msp && typeof msp === 'object') return msp.id || msp._id || null;
+  return t.mspId || null;
+}
+function getTenantId(t)   { return t.id || t._id || t.tenantId || '—'; }
+function getTenantName(t) {
+  for (const k of ['orgName','name','tenantName','companyName','displayName']) if (t[k]) return t[k];
+  return t.subdomain || getTenantId(t);
+}
+function getDomain(t)    { return t.subdomain || t.domain || '—'; }
+function getStatus(t)    { return t.status || '—'; }
+function getActiveUsers(t)     { return pickNum(t, 'usersCount.total'); }
+function getEnterpriseUsers(t) { return pickNum(t, 'usersCount.enterprise'); }
+function getStarterUsers(t)    { return pickNum(t, 'usersCount.starters'); }
+function getCreated(t) {
+  const d = t.createdAt || t.created_at;
+  return d ? new Date(d).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+}
+function statusBadge(s) {
+  const cls = s==='LIVE'?'s-LIVE':s==='SUSPENDED'?'s-SUSPENDED':s.startsWith('ERROR')?'s-ERROR':s.startsWith('INIT')?'s-INIT':s==='MIGRATING'?'s-MIGRATING':'s-other';
+  return `<span class="status-badge ${cls}">${s}</span>`;
+}
+function groupByMsp(tenants) {
+  const map = new Map();
+  for (const t of tenants) {
+    const key = getMspId(t) || getMspName(t);
+    if (!map.has(key)) map.set(key, { label: getMspName(t), tenants: [] });
+    map.get(key).tenants.push(t);
   }
+  return [...map.values()].sort((a,b) => a.label.localeCompare(b.label));
+}
 
-  function getTenantId(t) {
-    return t.id || t._id || t.tenantId || t.tenant_id || '—';
-  }
+// ── Render tree ───────────────────────────────────────────────────────────────
+function renderTree(tenants) {
+  const groups = groupByMsp(tenants);
+  const totalActive     = tenants.reduce((s,t) => s+(getActiveUsers(t)??0), 0);
+  const totalEnterprise = tenants.reduce((s,t) => s+(getEnterpriseUsers(t)??0), 0);
+  const totalStarter    = tenants.reduce((s,t) => s+(getStarterUsers(t)??0), 0);
 
-  function getTenantName(t) {
-    return extractStr(t, 'orgName','name','tenantName','tenant_name','companyName','company_name','displayName','title')
-      || t.domain || t.subdomain || getTenantId(t);
-  }
+  document.getElementById('chipMsps').textContent     = `${groups.length} MSPs`;
+  document.getElementById('chipTenants').textContent  = `${tenants.length} Tenants`;
+  document.getElementById('chipActive').textContent   = `${totalActive.toLocaleString()} Active Users`;
+  document.getElementById('chipEnterprise').textContent = `${totalEnterprise.toLocaleString()} Enterprise`;
+  document.getElementById('chipStarter').textContent  = `${totalStarter.toLocaleString()} Starter`;
 
-  function getDomain(t) {
-    return t.domain || t.subdomain || t.domainName || '—';
-  }
+  const container = document.getElementById('treeView');
+  container.innerHTML = '';
 
-  function getStatus(t) {
-    return t.status || '—';
-  }
+  for (const group of groups) {
+    const mspActive     = group.tenants.reduce((s,t)=>s+(getActiveUsers(t)??0),0);
+    const mspEnterprise = group.tenants.reduce((s,t)=>s+(getEnterpriseUsers(t)??0),0);
+    const mspStarter    = group.tenants.reduce((s,t)=>s+(getStarterUsers(t)??0),0);
 
-  function pickNum(t, ...keys) {
-    for (const k of keys) {
-      // support dot-path like "users.active"
-      let v = t;
-      for (const part of k.split('.')) v = v?.[part];
-      if (typeof v === 'number') return v;
-      if (typeof v === 'string' && v !== '' && !isNaN(Number(v))) return Number(v);
-    }
-    return null;
-  }
+    const rows = group.tenants.map(t => {
+      const id = getTenantId(t), name = getTenantName(t), domain = getDomain(t);
+      const status = getStatus(t), active = getActiveUsers(t);
+      const enterprise = getEnterpriseUsers(t), starter = getStarterUsers(t), created = getCreated(t);
+      const search = [group.label,id,name,domain,status].join(' ').toLowerCase();
+      const num = v => v!=null ? `<span class="users-count">${v.toLocaleString()}</span>` : '<span class="users-count na">—</span>';
+      return `<tr data-search="${search}">
+        <td class="tenant-id" title="${id}">${id}</td>
+        <td class="tenant-name">${name}</td>
+        <td><span class="domain-pill">${domain}</span></td>
+        <td>${statusBadge(status)}</td>
+        <td>${num(active)}</td><td>${num(enterprise)}</td><td>${num(starter)}</td>
+        <td>${created}</td>
+      </tr>`;
+    }).join('');
 
-  function getActiveUsers(t) {
-    return pickNum(t, 'usersCount.total');
-  }
-
-  function getEnterpriseUsers(t) {
-    return pickNum(t, 'usersCount.enterprise');
-  }
-
-  function getStarterUsers(t) {
-    return pickNum(t, 'usersCount.starters');
-  }
-
-  // kept for backwards-compat in excel/summary
-  function getUserCount(t) {
-    return getActiveUsers(t);
-  }
-
-  function getCreated(t) {
-    const d = t.createdAt || t.created_at || t.createdDate;
-    return d ? new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '—';
-  }
-
-  function statusBadge(s) {
-    const cls = s === 'LIVE' ? 's-LIVE'
-      : s === 'SUSPENDED' ? 's-SUSPENDED'
-      : s.startsWith('ERROR') ? 's-ERROR'
-      : s.startsWith('INIT') ? 's-INIT'
-      : s === 'MIGRATING' ? 's-MIGRATING'
-      : 's-other';
-    return `<span class="status-badge ${cls}">${s}</span>`;
-  }
-
-  // ── Grouping ──────────────────────────────────────────────────────────────
-
-  function groupByMsp(tenants) {
-    const map = new Map();
-    for (const t of tenants) {
-      const key = getMspId(t) || getMspName(t);
-      const label = getMspName(t);
-      if (!map.has(key)) map.set(key, { label, tenants: [] });
-      map.get(key).tenants.push(t);
-    }
-    return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
-  }
-
-  // ── Render ────────────────────────────────────────────────────────────────
-
-  function renderTree(tenants) {
-    const groups = groupByMsp(tenants);
-    const totalActive     = tenants.reduce((s, t) => s + (getActiveUsers(t)     ?? 0), 0);
-    const totalEnterprise = tenants.reduce((s, t) => s + (getEnterpriseUsers(t) ?? 0), 0);
-    const totalStarter    = tenants.reduce((s, t) => s + (getStarterUsers(t)    ?? 0), 0);
-    const hasUsers = tenants.some(t => getActiveUsers(t) != null);
-
-    document.getElementById('chipMsps').textContent       = `${groups.length} MSPs`;
-    document.getElementById('chipTenants').textContent    = `${tenants.length} Tenants`;
-    document.getElementById('chipActive').textContent     = hasUsers ? `${totalActive.toLocaleString()} Active Users`     : 'Active Users N/A';
-    document.getElementById('chipEnterprise').textContent = hasUsers ? `${totalEnterprise.toLocaleString()} Enterprise`   : 'Enterprise N/A';
-    document.getElementById('chipStarter').textContent    = hasUsers ? `${totalStarter.toLocaleString()} Starter`         : 'Starter N/A';
-
-    const container = document.getElementById('treeView');
-    container.innerHTML = '';
-
-    for (const group of groups) {
-      const block = document.createElement('div');
-      block.className = 'msp-block';
-      block.dataset.mspLabel = group.label.toLowerCase();
-
-      const mspActive     = group.tenants.reduce((s, t) => s + (getActiveUsers(t)     ?? 0), 0);
-      const mspEnterprise = group.tenants.reduce((s, t) => s + (getEnterpriseUsers(t) ?? 0), 0);
-      const mspStarter    = group.tenants.reduce((s, t) => s + (getStarterUsers(t)    ?? 0), 0);
-      const mspUserStr = hasUsers ? ` · ${mspActive} active · ${mspEnterprise} enterprise · ${mspStarter} starter` : '';
-
-      const rows = group.tenants.map(t => {
-        const id         = getTenantId(t);
-        const name       = getTenantName(t);
-        const domain     = getDomain(t);
-        const status     = getStatus(t);
-        const active     = getActiveUsers(t);
-        const enterprise = getEnterpriseUsers(t);
-        const starter    = getStarterUsers(t);
-        const created    = getCreated(t);
-        const search     = [group.label, id, name, domain, status].join(' ').toLowerCase();
-        const num = (v) => v != null ? `<span class="users-count">${v.toLocaleString()}</span>` : '<span class="users-count na">—</span>';
-
-        return `<tr data-search="${search}">
-          <td class="tenant-id" title="${id}">${id}</td>
-          <td class="tenant-name">${name}</td>
-          <td><span class="domain-pill">${domain}</span></td>
-          <td>${statusBadge(status)}</td>
-          <td>${num(active)}</td>
-          <td>${num(enterprise)}</td>
-          <td>${num(starter)}</td>
-          <td>${created}</td>
-        </tr>`;
-      }).join('');
-
-      block.innerHTML = `
-        <div class="msp-header" onclick="toggleMsp(this)">
-          <span class="msp-icon">🏢</span>
-          <div>
-            <div class="msp-title">${group.label}</div>
-            <div class="msp-subtitle">${group.tenants.length} tenant${group.tenants.length !== 1 ? 's' : ''}${mspUserStr}</div>
-          </div>
-          <span class="msp-badge">${group.tenants.length}</span>
-          <span class="msp-chevron">▼</span>
+    const block = document.createElement('div');
+    block.className = 'msp-block';
+    block.dataset.mspLabel = group.label.toLowerCase();
+    block.innerHTML = `
+      <div class="msp-header" onclick="toggleMsp(this)">
+        <span class="msp-icon">🏢</span>
+        <div>
+          <div class="msp-title">${group.label}</div>
+          <div class="msp-subtitle">${group.tenants.length} tenant${group.tenants.length!==1?'s':''} · ${mspActive} active · ${mspEnterprise} enterprise · ${mspStarter} starter</div>
         </div>
-        <div class="tenant-body">
-          <table>
-            <thead>
-              <tr>
-                <th>Tenant ID</th>
-                <th>Name</th>
-                <th>Domain</th>
-                <th>Status</th>
-                <th>Active Users</th>
-                <th>Enterprise Users</th>
-                <th>Starter Users</th>
-                <th>Created</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>`;
-
-      container.appendChild(block);
-    }
+        <span class="msp-badge">${group.tenants.length}</span>
+        <span class="msp-chevron">▼</span>
+      </div>
+      <div class="tenant-body">
+        <table>
+          <thead><tr>
+            <th>Tenant ID</th><th>Name</th><th>Domain</th><th>Status</th>
+            <th>Active Users</th><th>Enterprise Users</th><th>Starter Users</th><th>Created</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    container.appendChild(block);
   }
+}
 
-  function toggleMsp(header) {
-    const body = header.nextElementSibling;
-    const collapsed = body.style.display === 'none';
-    body.style.display = collapsed ? '' : 'none';
-    header.classList.toggle('collapsed', !collapsed);
-  }
-
-  function toggleAll(open) {
-    document.querySelectorAll('.msp-header').forEach(h => {
-      h.nextElementSibling.style.display = open ? '' : 'none';
-      h.classList.toggle('collapsed', !open);
+function toggleMsp(header) {
+  const body = header.nextElementSibling;
+  const collapsed = body.style.display === 'none';
+  body.style.display = collapsed ? '' : 'none';
+  header.classList.toggle('collapsed', !collapsed);
+}
+function toggleAll(open) {
+  document.querySelectorAll('.msp-header').forEach(h => {
+    h.nextElementSibling.style.display = open ? '' : 'none';
+    h.classList.toggle('collapsed', !open);
+  });
+}
+function filterResults() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('.msp-block').forEach(block => {
+    const mspMatch = !q || block.dataset.mspLabel.includes(q);
+    let anyRow = false;
+    block.querySelectorAll('tbody tr').forEach(row => {
+      const match = mspMatch || row.dataset.search.includes(q);
+      row.style.display = match ? '' : 'none';
+      if (match) anyRow = true;
     });
-  }
+    block.style.display = anyRow ? '' : 'none';
+    if (anyRow && q) { block.querySelector('.tenant-body').style.display=''; block.querySelector('.msp-header').classList.remove('collapsed'); }
+  });
+}
 
-  function filterResults() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
-    document.querySelectorAll('.msp-block').forEach(block => {
-      const mspMatch = !q || block.dataset.mspLabel.includes(q);
-      let anyRow = false;
-      block.querySelectorAll('tbody tr').forEach(row => {
-        const match = mspMatch || row.dataset.search.includes(q);
-        row.style.display = match ? '' : 'none';
-        if (match) anyRow = true;
-      });
-      block.style.display = anyRow ? '' : 'none';
-      if (anyRow && q) {
-        block.querySelector('.tenant-body').style.display = '';
-        block.querySelector('.msp-header').classList.remove('collapsed');
-      }
-    });
-  }
+// ── Fetch tenants ─────────────────────────────────────────────────────────────
+function showStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status-msg status-' + type;
+  el.style.display = msg ? 'inline-block' : 'none';
+}
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
+async function fetchData() {
+  const email = document.getElementById('email').value.trim();
+  if (!email) { showStatus('statusMsg','Enter your admin email.','error'); return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Connecting…';
+  showStatus('statusMsg','Authenticating…','info');
+  try {
+    const loginRes = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    const loginData = await loginRes.json();
+    if (loginData.error) throw new Error(loginData.error);
+    currentToken = loginData.token;
 
-  function showStatus(msg, type) {
-    const el = document.getElementById('statusMsg');
-    el.textContent = msg;
-    el.className = 'status-msg status-' + type;
-    el.style.display = 'inline-block';
-  }
+    showStatus('statusMsg','Fetching tenants…','info');
+    btn.innerHTML = '<span class="spinner"></span>Loading…';
 
-  async function fetchData() {
-    const email = document.getElementById('email').value.trim();
-    if (!email) { showStatus('Enter your admin email.', 'error'); return; }
+    const tenRes = await fetch('/api/tenants',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:currentToken})});
+    const tenData = await tenRes.json();
+    if (tenData.error) throw new Error(tenData.error);
+    if (tenData.raw) { showStatus('statusMsg','Unexpected response — see debug.','error'); return; }
 
-    const btn = document.getElementById('loginBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span>Connecting…';
-    showStatus('Authenticating…', 'info');
-
-    try {
-      const loginRes = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const loginData = await loginRes.json();
-      if (loginData.error) throw new Error(loginData.error);
-
-      showStatus('Fetching tenants…', 'info');
-      btn.innerHTML = '<span class="spinner"></span>Loading…';
-
-      const tenRes = await fetch('/api/tenants', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: loginData.token }),
-      });
-      const tenData = await tenRes.json();
-      if (tenData.error) throw new Error(tenData.error);
-      if (tenData.raw) {
-        showStatus('Unexpected response shape — see debug panel.', 'error');
-        showDebugData(tenData.raw);
-        return;
-      }
-
-      allTenants = tenData.tenants || [];
-      sampleRecord = tenData.sample;
-
-      renderTree(allTenants);
-      showStatus(`Loaded ${allTenants.length} tenants.`, 'ok');
-      document.getElementById('results').style.display = 'block';
-
-      if (sampleRecord) {
-        document.getElementById('debugPanel').textContent =
-          JSON.stringify(sampleRecord, null, 2);
-        // Auto-open if users are not resolving
-        if (getActiveUsers(sampleRecord) == null) {
-          document.getElementById('debugPanel').style.display = 'block';
-        }
-      }
-
-    } catch (e) {
-      showStatus(e.message, 'error');
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = 'Reconnect';
-    }
-  }
-
-  function showDebugData(data) {
-    document.getElementById('debugPanel').textContent = JSON.stringify(data, null, 2);
-    document.getElementById('debugPanel').style.display = 'block';
+    allTenants = tenData.tenants || [];
+    sampleRecord = tenData.sample;
+    renderTree(allTenants);
+    showStatus('statusMsg',`Loaded ${allTenants.length} tenants.`,'ok');
     document.getElementById('results').style.display = 'block';
+    document.getElementById('syncBtn2').disabled = false;
+    document.getElementById('syncPreStatus').textContent = `${allTenants.length} tenants loaded. Ready to sync.`;
+    document.getElementById('syncPreStatus').className = 'status-msg status-ok';
+    if (sampleRecord) document.getElementById('debugPanel').textContent = JSON.stringify(sampleRecord,null,2);
+    // Save email for next time
+    await fetch('/api/creds/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({msp_email:email})});
+  } catch(e) {
+    showStatus('statusMsg',e.message,'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = 'Reconnect';
   }
+}
 
-  function toggleDebug() {
-    const p = document.getElementById('debugPanel');
-    p.style.display = p.style.display === 'none' ? 'block' : 'none';
-  }
-
-  // ── Excel export ──────────────────────────────────────────────────────────
-
-  function downloadExcel() {
-    if (!allTenants.length) { alert('No data to export.'); return; }
-
-    const groups = groupByMsp(allTenants);
-    const wb = XLSX.utils.book_new();
-
-    // All tenants flat
-    const flatRows = [['MSP', 'Tenant ID', 'Tenant Name', 'Domain', 'Status', 'Active Users', 'Enterprise Users', 'Starter Users', 'Created']];
-    for (const g of groups) {
-      for (const t of g.tenants) {
-        flatRows.push([
-          g.label,
-          getTenantId(t),
-          getTenantName(t),
-          getDomain(t),
-          getStatus(t),
-          getActiveUsers(t)     ?? '',
-          getEnterpriseUsers(t) ?? '',
-          getStarterUsers(t)    ?? '',
-          getCreated(t),
-        ]);
-      }
+// ── Excel export ──────────────────────────────────────────────────────────────
+function downloadExcel() {
+  if (!allTenants.length) { alert('No data to export.'); return; }
+  const groups = groupByMsp(allTenants);
+  const wb = XLSX.utils.book_new();
+  const flatRows = [['MSP','Tenant ID','Tenant Name','Domain','Status','Active Users','Enterprise Users','Starter Users','Created']];
+  for (const g of groups) {
+    for (const t of g.tenants) {
+      flatRows.push([g.label,getTenantId(t),getTenantName(t),getDomain(t),getStatus(t),getActiveUsers(t)??'',getEnterpriseUsers(t)??'',getStarterUsers(t)??'',getCreated(t)]);
     }
-    const wsAll = XLSX.utils.aoa_to_sheet(flatRows);
-    wsAll['!cols'] = [28,28,28,24,14,13,16,13,14].map(w => ({ wch: w }));
-    XLSX.utils.book_append_sheet(wb, wsAll, 'All Tenants');
-
-    // MSP summary
-    const sumRows = [['MSP', 'Tenants', 'Active Users', 'Enterprise Users', 'Starter Users', 'Live', 'Suspended', 'Error', 'Other']];
-    for (const g of groups) {
-      const st = (s) => g.tenants.filter(t => getStatus(t).toUpperCase().startsWith(s)).length;
-      const active     = g.tenants.reduce((a, t) => a + (getActiveUsers(t)     ?? 0), 0);
-      const enterprise = g.tenants.reduce((a, t) => a + (getEnterpriseUsers(t) ?? 0), 0);
-      const starter    = g.tenants.reduce((a, t) => a + (getStarterUsers(t)    ?? 0), 0);
-      const live = st('LIVE'), susp = st('SUSPEND'), err = st('ERROR');
-      sumRows.push([g.label, g.tenants.length, active || '', enterprise || '', starter || '', live, susp, err, g.tenants.length - live - susp - err]);
-    }
-    const wsSum = XLSX.utils.aoa_to_sheet(sumRows);
-    wsSum['!cols'] = [28,10,13,16,13,8,10,8,8].map(w => ({ wch: w }));
-    XLSX.utils.book_append_sheet(wb, wsSum, 'MSP Summary');
-
-    XLSX.writeFile(wb, `MSP_Tenants_${new Date().toISOString().slice(0,10)}.xlsx`);
   }
+  const wsAll = XLSX.utils.aoa_to_sheet(flatRows);
+  wsAll['!cols'] = [28,28,28,20,14,13,16,13,14].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, wsAll, 'All Tenants');
+
+  const sumRows = [['MSP','Tenants','Active Users','Enterprise Users','Starter Users','Live','Suspended','Error','Other']];
+  for (const g of groups) {
+    const st = s => g.tenants.filter(t=>getStatus(t).toUpperCase().startsWith(s)).length;
+    const a=g.tenants.reduce((s,t)=>s+(getActiveUsers(t)??0),0);
+    const e=g.tenants.reduce((s,t)=>s+(getEnterpriseUsers(t)??0),0);
+    const k=g.tenants.reduce((s,t)=>s+(getStarterUsers(t)??0),0);
+    const live=st('LIVE'),susp=st('SUSPEND'),err=st('ERROR');
+    sumRows.push([g.label,g.tenants.length,a||'',e||'',k||'',live,susp,err,g.tenants.length-live-susp-err]);
+  }
+  const wsSum = XLSX.utils.aoa_to_sheet(sumRows);
+  wsSum['!cols'] = [28,10,13,16,13,8,10,8,8].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, wsSum, 'MSP Summary');
+  XLSX.writeFile(wb, `MSP_Tenants_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// ── Salesforce sync ───────────────────────────────────────────────────────────
+async function startSync() {
+  if (!allTenants.length) {
+    alert('Please load tenants first (Tenants tab).');
+    switchTab('tenants'); return;
+  }
+  const btn1 = document.getElementById('syncBtn');
+  const btn2 = document.getElementById('syncBtn2');
+  [btn1,btn2].forEach(b=>{b.disabled=true; b.innerHTML='<span class="spinner"></span>Syncing…';});
+  showStatus('syncStatusMsg','Syncing with Salesforce…','info');
+  switchTab('sync');
+
+  try {
+    const res = await fetch('/api/sf/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tenants:allTenants})});
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderSyncResults(data.results || []);
+    showStatus('syncStatusMsg',`Sync complete — ${data.results.length} items processed.`,'ok');
+  } catch(e) {
+    showStatus('syncStatusMsg',e.message,'error');
+  } finally {
+    [btn1,btn2].forEach(b=>{b.disabled=false; b.innerHTML='Sync to Salesforce';});
+  }
+}
+
+function renderSyncResults(results) {
+  const counts = {created:0,updated:0,ok:0,not_found:0,error:0,warning:0};
+  for (const r of results) counts[r.action] = (counts[r.action]||0)+1;
+
+  document.getElementById('syncStats').innerHTML = [
+    counts.created  ? `<span class="sync-stat ss-created">${counts.created} Created</span>` : '',
+    counts.updated  ? `<span class="sync-stat ss-updated">${counts.updated} Updated</span>` : '',
+    counts.ok       ? `<span class="sync-stat ss-ok">${counts.ok} Verified</span>` : '',
+    counts.not_found? `<span class="sync-stat ss-not_found">${counts.not_found} Not Found</span>` : '',
+    counts.error    ? `<span class="sync-stat ss-error">${counts.error} Errors</span>` : '',
+  ].join('');
+
+  const tbody = document.getElementById('syncTableBody');
+  tbody.innerHTML = results.map(r => {
+    const isMsp = r.type === 'msp' || r.type === 'warning';
+    const typeIcon = r.type==='msp'?'🏢':r.type==='warning'?'⚠️':'🏗️';
+    const actionCls = `a-${r.action}`;
+    const actionLabel = {created:'Created',updated:'Updated',ok:'Verified',not_found:'Not Found',error:'Error',warning:'Warning'}[r.action]||r.action;
+    return `<tr class="${isMsp?'row-msp':''}">
+      <td>${typeIcon} ${r.type==='warning'?'Warning':r.type==='msp'?'MSP':'Tenant'}</td>
+      <td>${r.name||'—'}</td>
+      <td>${r.msp||'—'}</td>
+      <td><span class="action-badge ${actionCls}">${actionLabel}</span></td>
+      <td style="color:#666;font-size:0.78rem">${r.detail||''}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('syncPanel').style.display = 'block';
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const res = await fetch('/api/creds/load');
+    const c = await res.json();
+    if (c.msp_email)    document.getElementById('email').value    = c.msp_email;
+    if (c.msp_email)    document.getElementById('s_email').value  = c.msp_email;
+    if (c.sf_username)  document.getElementById('sf_username').value = c.sf_username;
+    if (c.sf_sandbox)   document.getElementById('sf_sandbox').checked = c.sf_sandbox;
+  } catch(e) { /* no saved creds yet */ }
+}
+
+async function saveSettings() {
+  const payload = {
+    msp_email:   document.getElementById('s_email').value.trim(),
+    sf_username: document.getElementById('sf_username').value.trim(),
+    sf_password: document.getElementById('sf_password').value,
+    sf_token:    document.getElementById('sf_token').value,
+    sf_sandbox:  document.getElementById('sf_sandbox').checked,
+  };
+  // Also update the login email field
+  if (payload.msp_email) document.getElementById('email').value = payload.msp_email;
+  try {
+    await fetch('/api/creds/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    showStatus('settingsStatus','Settings saved.','ok');
+    setTimeout(()=>showStatus('settingsStatus','','ok'),3000);
+  } catch(e) {
+    showStatus('settingsStatus',e.message,'error');
+  }
+}
+
+async function testSalesforce() {
+  const payload = {
+    sf_username: document.getElementById('sf_username').value.trim(),
+    sf_password: document.getElementById('sf_password').value,
+    sf_token:    document.getElementById('sf_token').value,
+    sf_sandbox:  document.getElementById('sf_sandbox').checked,
+  };
+  if (!payload.sf_username || !payload.sf_password) {
+    showStatus('settingsStatus','Enter Salesforce username and password first.','error'); return;
+  }
+  showStatus('settingsStatus','Testing connection…','info');
+  try {
+    const res = await fetch('/api/sf/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    showStatus('settingsStatus',`✅ Connected to: ${data.org}`,'ok');
+  } catch(e) {
+    showStatus('settingsStatus',`❌ ${e.message}`,'error');
+  }
+}
+
+function toggleDebug() {
+  const p = document.getElementById('debugPanel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadSettings();
 </script>
 </body>
 </html>
