@@ -292,47 +292,33 @@
             <span class="field-note">Your org's Lightning URL — used to target the correct instance</span>
           </div>
         </div>
-        <!-- Session Token (recommended for SSO orgs) -->
-        <div style="background:#eaf4fb;border:1px solid #b8d9f0;border-radius:8px;padding:14px 18px;margin-top:14px">
-          <div style="font-size:0.8rem;font-weight:700;color:#2471a3;margin-bottom:8px">⚡ Recommended: Session Token (works with SSO)</div>
-          <div class="form-group">
-            <label for="sf_session_id">Salesforce Session Token</label>
-            <input type="password" id="sf_session_id" placeholder="00D…" />
-            <span class="field-note">
-              Get it from Salesforce: <strong>Setup → Developer Console</strong>, then in the console run:
-              <code style="background:#ddeeff;padding:1px 5px;border-radius:3px">System.debug(UserInfo.getSessionId());</code>
-              — copy the value from the log.
-            </span>
-          </div>
+          <!-- Step 1: Open SAML login -->
+        <div style="background:#f7f8fa;border:1px solid #e0e0e0;border-radius:10px;padding:18px 20px;margin-top:4px">
+          <div style="font-size:0.82rem;font-weight:700;color:#0d1b2a;margin-bottom:4px">Step 1 — Authenticate via Octopus</div>
+          <div style="font-size:0.78rem;color:#666;margin-bottom:12px">Opens the Octopus SSO login in your browser. Complete authentication — you'll land on Salesforce.</div>
+          <button class="btn btn-primary" onclick="openSamlLogin()" id="samlBtn">🔐 Login with Octopus SSO</button>
+          <span id="samlStatus" class="status-msg" style="display:none;margin-left:10px"></span>
         </div>
 
-        <!-- Username / password fallback -->
-        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #eee">
-          <div style="font-size:0.78rem;color:#999;margin-bottom:12px">OR — Username &amp; Password (only works if SSO is not enforced)</div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="sf_username">Salesforce Username (Email)</label>
-              <input type="email" id="sf_username" placeholder="user@company.com" />
-            </div>
-            <div class="form-group">
-              <label for="sf_password">Password</label>
-              <input type="password" id="sf_password" placeholder="••••••••" />
-            </div>
-            <div class="form-group">
-              <label for="sf_token">Security Token</label>
-              <input type="password" id="sf_token" placeholder="Token appended to password" />
-              <span class="field-note">SF → Settings → My Personal Information → Reset Security Token</span>
-            </div>
+        <!-- Step 2: Bookmarklet sends session back -->
+        <div style="background:#f7f8fa;border:1px solid #e0e0e0;border-radius:10px;padding:18px 20px;margin-top:12px">
+          <div style="font-size:0.82rem;font-weight:700;color:#0d1b2a;margin-bottom:4px">Step 2 — Capture your session (once logged in to Salesforce)</div>
+          <div style="font-size:0.78rem;color:#666;margin-bottom:12px">
+            After the Octopus login opens Salesforce in your browser, press <kbd style="background:#eee;padding:1px 6px;border-radius:4px;font-family:monospace">F12</kbd>
+            → <strong>Console</strong> tab, paste the snippet below and press <kbd style="background:#eee;padding:1px 6px;border-radius:4px;font-family:monospace">Enter</kbd>.
+            It will send your session ID directly to this app.
           </div>
-          <div style="margin-top:14px">
-            <div class="toggle-row">
-              <label class="switch">
-                <input type="checkbox" id="sf_sandbox" />
-                <span class="slider"></span>
-              </label>
-              <label for="sf_sandbox">Use Sandbox (test.salesforce.com)</label>
-            </div>
+
+          <div style="position:relative">
+            <pre id="bookmarkletCode" style="background:#1a1a2e;color:#a8ff78;border-radius:8px;padding:14px 16px;font-size:0.72rem;overflow-x:auto;margin:0;white-space:pre-wrap;word-break:break-all"></pre>
+            <button onclick="copyBookmarklet()" style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.15);border:none;color:white;padding:4px 10px;border-radius:5px;font-size:0.72rem;cursor:pointer">Copy</button>
           </div>
+          <div id="sessionCaptureStatus" class="status-msg" style="display:none;margin-top:10px"></div>
+        </div>
+
+        <!-- Session status indicator -->
+        <div id="sessionSavedBox" style="display:none;background:#e9f7ef;border:1px solid #a9dfbf;border-radius:8px;padding:12px 16px;margin-top:12px;font-size:0.82rem;color:#1e8449">
+          ✅ <strong>Session token saved.</strong> Click <em>Test Salesforce Connection</em> below to verify.
         </div>
       </div>
 
@@ -634,30 +620,87 @@ function renderSyncResults(results) {
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────────
+// ── SAML / session flow ───────────────────────────────────────────────────────
+
+function buildBookmarklet() {
+  const port = 5070;
+  const code = `fetch('http://localhost:${port}/api/sf/receive-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:UserContext.sessionId})}).then(r=>r.json()).then(d=>d.ok?alert('✅ Session saved! Switch back to the MSP app.'):alert('Error: '+JSON.stringify(d)));`;
+  document.getElementById('bookmarkletCode').textContent = code;
+}
+
+function copyBookmarklet() {
+  const code = document.getElementById('bookmarkletCode').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+
+async function openSamlLogin() {
+  const btn = document.getElementById('samlBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner spinner-dark"></span>Opening browser…';
+  try {
+    await fetch('/api/sf/open-saml', { method: 'POST' });
+    document.getElementById('samlStatus').textContent = 'Browser opened — complete Octopus authentication, then follow Step 2.';
+    document.getElementById('samlStatus').className = 'status-msg status-info';
+    document.getElementById('samlStatus').style.display = 'inline-block';
+    // Start polling for session capture
+    pollForSession();
+  } catch(e) {
+    document.getElementById('samlStatus').textContent = e.message;
+    document.getElementById('samlStatus').className = 'status-msg status-error';
+    document.getElementById('samlStatus').style.display = 'inline-block';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔐 Login with Octopus SSO';
+  }
+}
+
+let _pollTimer = null;
+function pollForSession() {
+  clearInterval(_pollTimer);
+  _pollTimer = setInterval(async () => {
+    try {
+      const res = await fetch('/api/creds/load');
+      const c = await res.json();
+      if (c.sf_session_id_saved) {
+        clearInterval(_pollTimer);
+        document.getElementById('sessionSavedBox').style.display = 'block';
+        document.getElementById('sessionCaptureStatus').style.display = 'none';
+        document.getElementById('samlStatus').textContent = '✅ Session captured!';
+        document.getElementById('samlStatus').className = 'status-msg status-ok';
+      }
+    } catch(e) { /* ignore */ }
+  }, 2000);
+  // Stop polling after 5 minutes
+  setTimeout(() => clearInterval(_pollTimer), 300000);
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+
 async function loadSettings() {
+  buildBookmarklet();
   try {
     const res = await fetch('/api/creds/load');
     const c = await res.json();
-    if (c.msp_email)    { document.getElementById('email').value     = c.msp_email;
-                          document.getElementById('s_email').value   = c.msp_email; }
-    if (c.sf_url)         document.getElementById('sf_url').value       = c.sf_url;
-    if (c.sf_username)    document.getElementById('sf_username').value  = c.sf_username;
-    if (c.sf_sandbox)     document.getElementById('sf_sandbox').checked = c.sf_sandbox;
-    if (c.sf_session_id_saved) document.getElementById('sf_session_id').placeholder = '••• saved •••';
+    if (c.msp_email) {
+      document.getElementById('email').value   = c.msp_email;
+      document.getElementById('s_email').value = c.msp_email;
+    }
+    if (c.sf_url) document.getElementById('sf_url').value = c.sf_url;
+    if (c.sf_session_id_saved) {
+      document.getElementById('sessionSavedBox').style.display = 'block';
+    }
   } catch(e) { /* no saved creds yet */ }
 }
 
 async function saveSettings() {
   const payload = {
-    msp_email:      document.getElementById('s_email').value.trim(),
-    sf_url:         document.getElementById('sf_url').value.trim(),
-    sf_session_id:  document.getElementById('sf_session_id').value.trim(),
-    sf_username:    document.getElementById('sf_username').value.trim(),
-    sf_password:    document.getElementById('sf_password').value,
-    sf_token:       document.getElementById('sf_token').value,
-    sf_sandbox:     document.getElementById('sf_sandbox').checked,
+    msp_email: document.getElementById('s_email').value.trim(),
+    sf_url:    document.getElementById('sf_url').value.trim(),
   };
-  // Also update the login email field
   if (payload.msp_email) document.getElementById('email').value = payload.msp_email;
   try {
     await fetch('/api/creds/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
@@ -669,20 +712,9 @@ async function saveSettings() {
 }
 
 async function testSalesforce() {
-  const payload = {
-    sf_url:        document.getElementById('sf_url').value.trim(),
-    sf_session_id: document.getElementById('sf_session_id').value.trim(),
-    sf_username:   document.getElementById('sf_username').value.trim(),
-    sf_password:   document.getElementById('sf_password').value,
-    sf_token:      document.getElementById('sf_token').value,
-    sf_sandbox:    document.getElementById('sf_sandbox').checked,
-  };
-  if (!payload.sf_username || !payload.sf_password) {
-    showStatus('settingsStatus','Enter Salesforce username and password first.','error'); return;
-  }
   showStatus('settingsStatus','Testing connection…','info');
   try {
-    const res = await fetch('/api/sf/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const res = await fetch('/api/sf/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     showStatus('settingsStatus',`✅ Connected to: ${data.org}`,'ok');

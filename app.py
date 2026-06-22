@@ -1,5 +1,6 @@
 import json
 import os
+import webbrowser
 from flask import Flask, request, jsonify, render_template
 import requests
 
@@ -43,6 +44,10 @@ def _get_tenant_name(t):
 
 def _soql_escape(s):
     return str(s).replace("\\", "\\\\").replace("'", "\\'")
+
+
+SAML_LOGIN_URL = "https://secret.doubleoctopus.io/saml/fed554e1-3551-421a-bc05-21adbbd1dabd/login"
+APP_PORT       = 5070
 
 
 # ── Routes: credentials ───────────────────────────────────────────────────────
@@ -189,6 +194,24 @@ def _get_sf(creds=None):
     )
 
 
+@app.route("/api/sf/open-saml", methods=["POST"])
+def sf_open_saml():
+    """Open the Octopus SAML login URL in the user's default browser."""
+    webbrowser.open(SAML_LOGIN_URL)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/sf/receive-session", methods=["POST"])
+def sf_receive_session():
+    """Bookmarklet POSTs the SF session ID here after SAML auth."""
+    data = request.get_json()
+    session_id = (data or {}).get("session_id", "").strip()
+    if not session_id:
+        return jsonify({"error": "No session_id in payload"}), 400
+    save_creds({"sf_session_id": session_id})
+    return jsonify({"ok": True})
+
+
 @app.route("/api/sf/test", methods=["POST"])
 def sf_test():
     data = request.get_json()
@@ -197,7 +220,11 @@ def sf_test():
         org = sf.query("SELECT Name FROM Organization LIMIT 1")
         return jsonify({"ok": True, "org": org["records"][0]["Name"]})
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        msg = str(e)
+        if "SSO_SERVICE_DOWN" in msg or "single sign on" in msg.lower():
+            msg = ("SSO is enforced — username/password is blocked. "
+                   "Use a Session Token instead (see the blue box above).")
+        return jsonify({"error": msg}), 400
 
 
 @app.route("/api/sf/sync", methods=["POST"])
@@ -208,7 +235,14 @@ def sf_sync():
     try:
         sf = _get_sf()
     except Exception as e:
-        return jsonify({"error": f"Salesforce auth failed: {e}"}), 400
+        msg = str(e)
+        if "SSO_SERVICE_DOWN" in msg or "single sign on" in msg.lower():
+            msg = ("SSO is enforced on this Salesforce org — username/password login is blocked. "
+                   "Go to ⚙️ Settings and paste a Session Token. "
+                   "Get it from Salesforce: Setup → Developer Console → Debug → "
+                   "Open Execute Anonymous Window → run: System.debug(UserInfo.getSessionId()); "
+                   "→ copy the value from the log output.")
+        return jsonify({"error": msg}), 400
 
     results = []
 
