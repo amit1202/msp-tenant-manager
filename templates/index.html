@@ -304,15 +304,19 @@
         <div style="background:#f7f8fa;border:1px solid #e0e0e0;border-radius:10px;padding:18px 20px;margin-top:12px">
           <div style="font-size:0.82rem;font-weight:700;color:#0d1b2a;margin-bottom:4px">Step 2 — Capture your session (once logged in to Salesforce)</div>
           <div style="font-size:0.78rem;color:#666;margin-bottom:12px">
-            After the Octopus login opens Salesforce in your browser, press <kbd style="background:#eee;padding:1px 6px;border-radius:4px;font-family:monospace">F12</kbd>
-            → <strong>Console</strong> tab, paste the snippet below and press <kbd style="background:#eee;padding:1px 6px;border-radius:4px;font-family:monospace">Enter</kbd>.
-            It will send your session ID directly to this app.
+            After logging in to Salesforce, press
+            <kbd style="background:#eee;padding:1px 6px;border-radius:4px;font-family:monospace">F12</kbd>
+            → open the <strong>Console</strong> tab →
+            click <strong>Copy</strong> below → paste into the console → press
+            <kbd style="background:#eee;padding:1px 6px;border-radius:4px;font-family:monospace">Enter</kbd>.
           </div>
 
-          <div style="position:relative">
-            <pre id="bookmarkletCode" style="background:#1a1a2e;color:#a8ff78;border-radius:8px;padding:14px 16px;font-size:0.72rem;overflow-x:auto;margin:0;white-space:pre-wrap;word-break:break-all"></pre>
-            <button onclick="copyBookmarklet()" style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.15);border:none;color:white;padding:4px 10px;border-radius:5px;font-size:0.72rem;cursor:pointer">Copy</button>
+          <!-- Label clearly separated from the code box -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:0.72rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.4px">── Console snippet (copy only this) ──</span>
+            <button onclick="copyBookmarklet()" style="background:#4a90d9;border:none;color:white;padding:5px 14px;border-radius:6px;font-size:0.78rem;font-weight:600;cursor:pointer">📋 Copy</button>
           </div>
+          <pre id="bookmarkletCode" style="background:#1a1a2e;color:#a8ff78;border-radius:8px;padding:14px 16px;font-size:0.72rem;overflow-x:auto;margin:0;white-space:pre-wrap;word-break:break-all;user-select:all"></pre>
           <div id="sessionCaptureStatus" class="status-msg" style="display:none;margin-top:10px"></div>
         </div>
 
@@ -624,7 +628,22 @@ function renderSyncResults(results) {
 
 function buildBookmarklet() {
   const port = 5070;
-  const code = `fetch('http://localhost:${port}/api/sf/receive-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:UserContext.sessionId})}).then(r=>r.json()).then(d=>d.ok?alert('✅ Session saved! Switch back to the MSP app.'):alert('Error: '+JSON.stringify(d)));`;
+  // Try multiple ways to extract the SF session ID from the Lightning page
+  const code =
+`(function(){
+  var sid =
+    (typeof UserContext!=='undefined' && UserContext.sessionId) ||
+    (document.cookie.match(/\\bsid=([^;]+)/)||[])[1] ||
+    null;
+  if(!sid){ alert('Could not find session ID on this page. Make sure you are on a Salesforce page after logging in.'); return; }
+  fetch('http://localhost:${port}/api/sf/receive-session',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({session_id:sid})
+  }).then(r=>r.json()).then(function(d){
+    d.ok ? alert('✅ Session saved! Switch back to the MSP app.') : alert('Error: '+JSON.stringify(d));
+  });
+})();`;
   document.getElementById('bookmarkletCode').textContent = code;
 }
 
