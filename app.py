@@ -54,8 +54,9 @@ def index():
 @app.route("/api/creds/load", methods=["GET"])
 def creds_load():
     c = load_creds()
-    # Never return SF password back to browser
-    safe = {k: v for k, v in c.items() if k not in ("sf_password", "sf_token")}
+    # Never return sensitive values to the browser
+    safe = {k: v for k, v in c.items() if k not in ("sf_password", "sf_token", "sf_session_id")}
+    safe["sf_session_id_saved"] = bool(c.get("sf_session_id"))
     return jsonify(safe)
 
 @app.route("/api/creds/save", methods=["POST"])
@@ -148,21 +149,37 @@ def tenants():
 
 # ── Routes: Salesforce ────────────────────────────────────────────────────────
 
+def _sf_instance_url(sf_url):
+    """Convert lightning URL to My Domain API instance URL."""
+    from urllib.parse import urlparse
+    sf_url = (sf_url or "").strip().rstrip("/")
+    if not sf_url:
+        return None
+    hostname = urlparse(sf_url).hostname or ""
+    subdomain = hostname.split(".")[0]
+    return f"https://{subdomain}.my.salesforce.com" if subdomain else None
+
+
 def _get_sf(creds=None):
     from simple_salesforce import Salesforce
-    from urllib.parse import urlparse
     if creds is None:
         creds = load_creds()
 
-    # Derive My Domain from the SF URL if provided
-    # e.g. https://secretdoubleoctopus.lightning.force.com/ → domain = 'secretdoubleoctopus.my'
+    sf_url = creds.get("sf_url", "")
+    instance_url = _sf_instance_url(sf_url)
+
+    # Preferred: session token (works even when SSO is enforced)
+    session_id = creds.get("sf_session_id", "").strip()
+    if session_id:
+        if not instance_url:
+            raise ValueError("Salesforce URL is required when using a Session Token.")
+        return Salesforce(session_id=session_id, instance_url=instance_url)
+
+    # Fallback: username + password + security token
     domain = "test" if creds.get("sf_sandbox") else "login"
-    sf_url = creds.get("sf_url", "").strip().rstrip("/")
-    if sf_url:
-        hostname = urlparse(sf_url).hostname or ""
-        subdomain = hostname.split(".")[0]
-        if subdomain:
-            domain = f"{subdomain}.my"
+    if instance_url:
+        subdomain = instance_url.split("//")[1].split(".")[0]
+        domain = f"{subdomain}.my"
 
     return Salesforce(
         username=creds["sf_username"],
@@ -289,4 +306,4 @@ def sf_sync():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5050)
+    app.run(debug=True, port=5070)

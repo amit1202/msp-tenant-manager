@@ -292,28 +292,46 @@
             <span class="field-note">Your org's Lightning URL — used to target the correct instance</span>
           </div>
         </div>
-        <div class="form-row" style="margin-top:14px">
+        <!-- Session Token (recommended for SSO orgs) -->
+        <div style="background:#eaf4fb;border:1px solid #b8d9f0;border-radius:8px;padding:14px 18px;margin-top:14px">
+          <div style="font-size:0.8rem;font-weight:700;color:#2471a3;margin-bottom:8px">⚡ Recommended: Session Token (works with SSO)</div>
           <div class="form-group">
-            <label for="sf_username">Salesforce Username (Email)</label>
-            <input type="email" id="sf_username" placeholder="user@company.com" />
-          </div>
-          <div class="form-group">
-            <label for="sf_password">Password</label>
-            <input type="password" id="sf_password" placeholder="••••••••" />
-          </div>
-          <div class="form-group">
-            <label for="sf_token">Security Token</label>
-            <input type="password" id="sf_token" placeholder="Token appended to password" />
-            <span class="field-note">SF → Settings → My Personal Information → Reset Security Token</span>
+            <label for="sf_session_id">Salesforce Session Token</label>
+            <input type="password" id="sf_session_id" placeholder="00D…" />
+            <span class="field-note">
+              Get it from Salesforce: <strong>Setup → Developer Console</strong>, then in the console run:
+              <code style="background:#ddeeff;padding:1px 5px;border-radius:3px">System.debug(UserInfo.getSessionId());</code>
+              — copy the value from the log.
+            </span>
           </div>
         </div>
-        <div style="margin-top:14px">
-          <div class="toggle-row">
-            <label class="switch">
-              <input type="checkbox" id="sf_sandbox" />
-              <span class="slider"></span>
-            </label>
-            <label for="sf_sandbox">Use Sandbox (test.salesforce.com)</label>
+
+        <!-- Username / password fallback -->
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #eee">
+          <div style="font-size:0.78rem;color:#999;margin-bottom:12px">OR — Username &amp; Password (only works if SSO is not enforced)</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="sf_username">Salesforce Username (Email)</label>
+              <input type="email" id="sf_username" placeholder="user@company.com" />
+            </div>
+            <div class="form-group">
+              <label for="sf_password">Password</label>
+              <input type="password" id="sf_password" placeholder="••••••••" />
+            </div>
+            <div class="form-group">
+              <label for="sf_token">Security Token</label>
+              <input type="password" id="sf_token" placeholder="Token appended to password" />
+              <span class="field-note">SF → Settings → My Personal Information → Reset Security Token</span>
+            </div>
+          </div>
+          <div style="margin-top:14px">
+            <div class="toggle-row">
+              <label class="switch">
+                <input type="checkbox" id="sf_sandbox" />
+                <span class="slider"></span>
+              </label>
+              <label for="sf_sandbox">Use Sandbox (test.salesforce.com)</label>
+            </div>
           </div>
         </div>
       </div>
@@ -620,22 +638,24 @@ async function loadSettings() {
   try {
     const res = await fetch('/api/creds/load');
     const c = await res.json();
-    if (c.msp_email)   { document.getElementById('email').value    = c.msp_email;
-                         document.getElementById('s_email').value  = c.msp_email; }
-    if (c.sf_url)       document.getElementById('sf_url').value      = c.sf_url;
-    if (c.sf_username)  document.getElementById('sf_username').value = c.sf_username;
-    if (c.sf_sandbox)   document.getElementById('sf_sandbox').checked = c.sf_sandbox;
+    if (c.msp_email)    { document.getElementById('email').value     = c.msp_email;
+                          document.getElementById('s_email').value   = c.msp_email; }
+    if (c.sf_url)         document.getElementById('sf_url').value       = c.sf_url;
+    if (c.sf_username)    document.getElementById('sf_username').value  = c.sf_username;
+    if (c.sf_sandbox)     document.getElementById('sf_sandbox').checked = c.sf_sandbox;
+    if (c.sf_session_id_saved) document.getElementById('sf_session_id').placeholder = '••• saved •••';
   } catch(e) { /* no saved creds yet */ }
 }
 
 async function saveSettings() {
   const payload = {
-    msp_email:   document.getElementById('s_email').value.trim(),
-    sf_url:      document.getElementById('sf_url').value.trim(),
-    sf_username: document.getElementById('sf_username').value.trim(),
-    sf_password: document.getElementById('sf_password').value,
-    sf_token:    document.getElementById('sf_token').value,
-    sf_sandbox:  document.getElementById('sf_sandbox').checked,
+    msp_email:      document.getElementById('s_email').value.trim(),
+    sf_url:         document.getElementById('sf_url').value.trim(),
+    sf_session_id:  document.getElementById('sf_session_id').value.trim(),
+    sf_username:    document.getElementById('sf_username').value.trim(),
+    sf_password:    document.getElementById('sf_password').value,
+    sf_token:       document.getElementById('sf_token').value,
+    sf_sandbox:     document.getElementById('sf_sandbox').checked,
   };
   // Also update the login email field
   if (payload.msp_email) document.getElementById('email').value = payload.msp_email;
@@ -650,11 +670,12 @@ async function saveSettings() {
 
 async function testSalesforce() {
   const payload = {
-    sf_url:      document.getElementById('sf_url').value.trim(),
-    sf_username: document.getElementById('sf_username').value.trim(),
-    sf_password: document.getElementById('sf_password').value,
-    sf_token:    document.getElementById('sf_token').value,
-    sf_sandbox:  document.getElementById('sf_sandbox').checked,
+    sf_url:        document.getElementById('sf_url').value.trim(),
+    sf_session_id: document.getElementById('sf_session_id').value.trim(),
+    sf_username:   document.getElementById('sf_username').value.trim(),
+    sf_password:   document.getElementById('sf_password').value,
+    sf_token:      document.getElementById('sf_token').value,
+    sf_sandbox:    document.getElementById('sf_sandbox').checked,
   };
   if (!payload.sf_username || !payload.sf_password) {
     showStatus('settingsStatus','Enter Salesforce username and password first.','error'); return;
