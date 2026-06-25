@@ -1,6 +1,8 @@
 import json
 import os
+import random
 import webbrowser
+from datetime import date
 from flask import Flask, request, jsonify, render_template
 import requests
 
@@ -227,6 +229,44 @@ def sf_test():
         return jsonify({"error": msg}), 400
 
 
+def _sync_license(sf, account_id, tenant_name, msp_name, total_users, results):
+    """Create or update the License__c record linked to an Account."""
+    today = date.today().strftime("%m/%d/%Y")
+    license_fields = {
+        "Account__c":                  account_id,
+        "Name":                        tenant_name,
+        "License_Type__c":             "Enterprise",
+        "Environment__c":              "SaaS",
+        "Usage_Type__c":               "Production",
+        "Licenses_Pool__c":            total_users,
+        "Licenses_In_Use__c":          total_users,
+        "License_Status__c":           "Active",
+        "Managed_Service_Provider__c": msp_name,
+        "Organization_ID__c":          random.randint(100000, 999999),
+        "Comments__c":                 f"Updated by MSP Updater on {today}",
+    }
+    try:
+        lq = f"SELECT Id FROM License__c WHERE Account__c = '{account_id}' LIMIT 1"
+        lr = sf.query(lq)
+        if lr["records"]:
+            sf.License__c.update(lr["records"][0]["Id"], license_fields)
+            results.append({
+                "type": "license", "name": tenant_name, "msp": msp_name,
+                "action": "updated", "detail": f"License updated · {total_users} users · {today}",
+            })
+        else:
+            sf.License__c.create(license_fields)
+            results.append({
+                "type": "license", "name": tenant_name, "msp": msp_name,
+                "action": "created", "detail": f"License created · {total_users} users · {today}",
+            })
+    except Exception as e:
+        results.append({
+            "type": "license", "name": tenant_name, "msp": msp_name,
+            "action": "error", "detail": f"License error: {e}",
+        })
+
+
 @app.route("/api/sf/sync", methods=["POST"])
 def sf_sync():
     data = request.get_json()
@@ -316,7 +356,8 @@ def sf_sync():
             try:
                 t_result = sf.query(tq)
                 if t_result["records"]:
-                    sf.Account.update(t_result["records"][0]["Id"], update_fields)
+                    account_id = t_result["records"][0]["Id"]
+                    sf.Account.update(account_id, update_fields)
                     results.append({
                         "type": "tenant", "name": tenant_name, "msp": msp_name,
                         "action": "updated",
@@ -324,12 +365,18 @@ def sf_sync():
                     })
                 else:
                     update_fields["Name"] = tenant_name
-                    sf.Account.create(update_fields)
+                    created = sf.Account.create(update_fields)
+                    account_id = created.get("id")
                     results.append({
                         "type": "tenant", "name": tenant_name, "msp": msp_name,
                         "action": "created",
                         "detail": f"Users: {total_users} total · {enterprise_users} enterprise · {starter_users} starter",
                     })
+
+                # ── Create / update License record for this account ──
+                if account_id:
+                    _sync_license(sf, account_id, tenant_name, msp_name, total_users, results)
+
             except Exception as e:
                 results.append({
                     "type": "tenant", "name": tenant_name, "msp": msp_name,

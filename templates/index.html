@@ -133,6 +133,7 @@
     .sync-table tbody tr:last-child { border-bottom: none; }
     .sync-table tbody td { padding: 8px 14px; vertical-align: middle; }
     .row-msp td { background: #f7f8fa; font-weight: 700; }
+    .row-license td { background: #fafff8; color: #333; font-size: 0.78rem; }
     .action-badge { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; }
     .a-created   { background: #e9f7ef; color: #1e8449; }
     .a-updated   { background: #eaf4fb; color: #2471a3; }
@@ -638,11 +639,12 @@ function renderSyncResults(results) {
   const tbody = document.getElementById('syncTableBody');
   tbody.innerHTML = results.map(r => {
     const isMsp = r.type === 'msp' || r.type === 'warning';
-    const typeIcon = r.type==='msp'?'🏢':r.type==='warning'?'⚠️':'🏗️';
+    const typeIcon = r.type==='msp'?'🏢':r.type==='warning'?'⚠️':r.type==='license'?'📄':'🏗️';
     const actionCls = `a-${r.action}`;
     const actionLabel = {created:'Created',updated:'Updated',ok:'Verified',not_found:'Not Found',error:'Error',warning:'Warning'}[r.action]||r.action;
-    return `<tr class="${isMsp?'row-msp':''}">
-      <td>${typeIcon} ${r.type==='warning'?'Warning':r.type==='msp'?'MSP':'Tenant'}</td>
+    const typeLabel = r.type==='msp'?'MSP':r.type==='license'?'License':r.type==='warning'?'Warning':'Tenant';
+    return `<tr class="${isMsp?'row-msp':r.type==='license'?'row-license':''}">
+      <td>${typeIcon} ${typeLabel}</td>
       <td>${r.name||'—'}</td>
       <td>${r.msp||'—'}</td>
       <td><span class="action-badge ${actionCls}">${actionLabel}</span></td>
