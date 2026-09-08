@@ -13,8 +13,6 @@
     header h1 { font-size: 1.1rem; font-weight: 600; }
     header span { font-size: 0.78rem; color: #7a9ab8; }
     .header-right { display: flex; align-items: center; gap: 12px; }
-    .settings-btn { background: rgba(255,255,255,0.1); border: none; color: white; padding: 7px 14px; border-radius: 7px; cursor: pointer; font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: background 0.15s; }
-    .settings-btn:hover { background: rgba(255,255,255,0.2); }
 
     /* ── Tabs ── */
     .tabs { background: #0d1b2a; padding: 0 32px; display: flex; gap: 4px; border-top: 1px solid rgba(255,255,255,0.08); }
@@ -65,6 +63,9 @@
     .btn-outline:hover:not(:disabled) { background: #eaf4fb; }
     .btn-sf { background: #00a1e0; color: white; }
     .btn-sf:hover:not(:disabled) { background: #0181b2; }
+    .btn-xs { padding: 5px 12px; font-size: 0.78rem; }
+    .btn-amber { background: #fef3c7; color: #92400e; border: 1.5px solid #f59e0b; }
+    .btn-amber:hover:not(:disabled) { background: #fde68a; }
     .btn-row { margin-top: 18px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
     /* ── Status messages ── */
@@ -75,33 +76,61 @@
     .status-warn  { background: #fef9e7; color: #9a6700; }
 
     /* ── Toolbar ── */
-    .toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+    .toolbar { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
     .toolbar-left h2 { font-size: 1rem; font-weight: 700; }
     .chips { display: flex; gap: 7px; margin-top: 6px; flex-wrap: wrap; }
     .chip { background: #e8f0fe; color: #2c5faa; font-size: 0.73rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
     .chip.muted { background: #f0f0f0; color: #666; }
     .toolbar-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    #searchInput { padding: 8px 13px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem; width: 220px; }
+    #searchInput { padding: 8px 13px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem; width: 200px; }
     #searchInput:focus { outline: none; border-color: #4a90d9; }
     .toggle-all { font-size: 0.78rem; color: #4a90d9; cursor: pointer; text-decoration: underline; background: none; border: none; padding: 0; }
 
+    /* ── Selection bar ── */
+    .sel-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 8px 14px; background: #f7f8fa; border-radius: 8px; border: 1px solid #e4e4e4; flex-wrap: wrap; }
+    .sel-count { font-weight: 700; color: #4a90d9; font-size: 0.82rem; min-width: 100px; }
+    .sf-legend { display: flex; gap: 14px; align-items: center; font-size: 0.75rem; color: #666; margin-left: auto; }
+    .sf-legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 3px; flex-shrink: 0; }
+
     /* ── Tree view ── */
     .msp-block { margin-bottom: 18px; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
-    .msp-header { background: #0d1b2a; color: white; padding: 13px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; transition: background 0.15s; }
+    .msp-header { background: #0d1b2a; color: white; padding: 13px 20px; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; transition: background 0.15s; }
     .msp-header:hover { background: #182d42; }
     .msp-header.collapsed .msp-chevron { transform: rotate(-90deg); }
+    .msp-header.msp-sf-exists { border-left: 5px solid #22c55e; }
+    .msp-header.msp-sf-new    { border-left: 5px solid #f59e0b; }
     .msp-icon { font-size: 1rem; }
     .msp-chevron { font-size: 0.7rem; transition: transform 0.2s; }
+    .msp-sf-name-wrap { display: flex; align-items: center; gap: 6px; margin-left: 10px; flex-shrink: 0; }
+    .msp-sf-name-label { font-size: 0.67rem; color: #7a9ab8; white-space: nowrap; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+    .msp-sf-name-input {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.22);
+      color: white; border-radius: 6px; padding: 4px 10px; font-size: 0.78rem;
+      width: 240px; outline: none; transition: border-color 0.15s, background 0.15s;
+    }
+    .msp-sf-name-input:focus { border-color: #4a90d9; background: rgba(255,255,255,0.18); }
+    .msp-sf-name-input::placeholder { color: rgba(255,255,255,0.35); }
+    .msp-sf-name-input.overridden { border-color: #f59e0b; background: rgba(245,158,11,0.15); }
+    /* ── Tenant SF name override ── */
+    .tenant-sf-name-input {
+      background: #f7f8fa; border: 1px solid #e0e0e0; color: #1a1a2e;
+      border-radius: 5px; padding: 3px 8px; font-size: 0.76rem;
+      width: 170px; outline: none; transition: border-color 0.15s, background 0.15s;
+    }
+    .tenant-sf-name-input:focus { border-color: #4a90d9; background: #fff; }
+    .tenant-sf-name-input.overridden { border-color: #f59e0b; background: #fffbeb; }
     .msp-title { font-weight: 700; font-size: 0.92rem; }
     .msp-subtitle { font-size: 0.73rem; color: #7a9ab8; margin-top: 2px; }
     .msp-badge { margin-left: auto; background: rgba(255,255,255,0.15); font-size: 0.73rem; font-weight: 600; padding: 3px 10px; border-radius: 12px; white-space: nowrap; }
     .tenant-body { background: white; }
     .tenant-body table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
     .tenant-body thead th { background: #f7f8fa; font-weight: 600; text-align: left; padding: 9px 14px; color: #666; border-bottom: 1px solid #eee; white-space: nowrap; font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.4px; }
+    .tenant-body thead th.cb-th { width: 36px; text-align: center; padding: 9px 8px; }
     .tenant-body tbody tr { border-bottom: 1px solid #f3f3f3; transition: background 0.1s; }
     .tenant-body tbody tr:last-child { border-bottom: none; }
-    .tenant-body tbody tr:hover { background: #f9fbff; }
+    .tenant-body tbody tr:hover { filter: brightness(0.97); }
     .tenant-body tbody td { padding: 8px 14px; vertical-align: middle; }
+    .tenant-body tbody td.cb-td { padding: 8px 8px; text-align: center; width: 36px; }
     .tenant-id { font-family: monospace; font-size: 0.73rem; color: #aaa; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .tenant-name { font-weight: 600; color: #1a1a2e; }
     .domain-pill { display: inline-block; background: #eaf4fb; color: #2471a3; font-size: 0.73rem; padding: 2px 8px; border-radius: 6px; font-family: monospace; }
@@ -114,6 +143,16 @@
     .s-INIT { background: #fef9e7; color: #b7770d; }
     .s-MIGRATING { background: #eaf4fb; color: #2471a3; }
     .s-other { background: #f2f3f4; color: #666; }
+
+    /* ── SF row status ── */
+    input.msp-all-cb { width: 15px; height: 15px; cursor: pointer; accent-color: #4a90d9; }
+    input.tenant-cb  { width: 14px; height: 14px; cursor: pointer; accent-color: #4a90d9; }
+    .tr-sf-exists { background: #f0fdf4 !important; }
+    .tr-sf-exists td.cb-td { border-left: 3px solid #22c55e; }
+    .tr-sf-new    { background: #fffbeb !important; }
+    .tr-sf-new td.cb-td    { border-left: 3px solid #f59e0b; }
+    .tr-sf-stale  { background: #fdecea !important; }
+    .tr-sf-stale td.cb-td  { border-left: 3px solid #c0392b; }
 
     /* ── Sync results ── */
     #syncPanel { margin-top: 24px; display: none; }
@@ -151,7 +190,6 @@
     #debugPanel { margin-top: 16px; background: #1a1a2e; color: #a8ff78; border-radius: 8px; padding: 14px 18px; font-family: monospace; font-size: 0.73rem; white-space: pre-wrap; display: none; max-height: 360px; overflow-y: auto; }
     .debug-toggle { font-size: 0.73rem; color: #aaa; cursor: pointer; text-decoration: underline; background: none; border: none; margin-top: 8px; display: block; }
 
-    /* note under field */
     .field-note { font-size: 0.73rem; color: #aaa; margin-top: 3px; }
   </style>
 </head>
@@ -160,7 +198,7 @@
 <header>
   <h1>MSP Tenant Manager</h1>
   <div class="header-right">
-    <span>msp.doubleoctopus.io/mt</span>
+    <span id="headerEnv">msp.doubleoctopus.io/mt</span>
   </div>
 </header>
 
@@ -207,9 +245,31 @@
           <button class="toggle-all" onclick="toggleAll(false)">Collapse all</button>
           <input type="text" id="searchInput" placeholder="Search tenants or MSPs…" oninput="filterResults()" />
           <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+        </div>
+      </div>
+
+      <!-- Selection + SF check bar -->
+      <div class="sel-bar">
+        <span class="sel-count" id="selCount">0 selected</span>
+        <button class="btn btn-xs btn-outline" onclick="selectAll(true)">Select All</button>
+        <button class="btn btn-xs btn-outline" onclick="selectAll(false)">Select None</button>
+        <button class="btn btn-xs btn-amber" id="selectNewBtn" onclick="selectNewOnly()" style="display:none">Select New Only</button>
+        <button class="btn btn-xs" id="checkSfBtn" onclick="checkSfStatus()" style="background:#e9f7ef;color:#1e8449;border:1.5px solid #27ae60">🔍 Check Salesforce</button>
+        <button class="btn btn-xs" id="staleCheckBtn" onclick="checkStaleAccounts()" style="background:#fdecea;color:#c0392b;border:1.5px solid #c0392b" title="Find Salesforce accounts marked active/managed that no longer match any loaded MSP tenant">🧹 Find Stale Accounts</button>
+        <button class="btn btn-xs" id="deactivateStaleBtn" onclick="deactivateStaleAccounts()" style="display:none;background:#c0392b;color:#fff;border:1.5px solid #a93226" disabled>🧹 Deactivate Selected</button>
+        <span id="checkSfStatus" class="status-msg" style="display:none"></span>
+        <div class="sf-legend" id="sfLegend" style="display:none">
+          <span><span class="sf-legend-dot" style="background:#22c55e"></span>Exists in SF</span>
+          <span><span class="sf-legend-dot" style="background:#f59e0b"></span>New (not in SF)</span>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+          <button class="btn btn-xs" id="autoAddBtn" onclick="autoAddNewTenants()" style="background:#eaf4fb;color:#2471a3;border:1.5px solid #2471a3" title="Select and save brand-new tenants under MSPs that already have at least one tenant selected — never re-adds a tenant you previously unmarked">🆕 Auto-add New Tenants</button>
+          <button class="btn btn-xs" id="saveSelBtn" onclick="saveSelection()" style="background:#f0f0f0;color:#444;border:1.5px solid #ccc" title="Save current selection &amp; MSP name overrides for next session">💾 Save Selection</button>
+          <span id="selSaveStatus" class="status-msg" style="display:none"></span>
           <button class="btn btn-sf" id="syncBtn" onclick="startSync()">Sync to Salesforce</button>
         </div>
       </div>
+
       <div id="treeView"></div>
       <button class="debug-toggle" onclick="toggleDebug()">Show raw API sample</button>
       <div id="debugPanel"></div>
@@ -230,17 +290,28 @@
           <li>For each <strong>Tenant</strong>: find or create account, set parent to MSP account</li>
           <li>Update <strong>License Pool</strong> &amp; <strong>Licenses In Use</strong> with total active users</li>
           <li>Check <strong>Active_production</strong> and <strong>Managed_By_MSP</strong> fields</li>
+          <li>Create / update <strong>License__c</strong> record per tenant</li>
         </ul>
       </div>
 
       <div class="card-section">
         <h3>Status</h3>
-        <div id="syncPreStatus" class="status-msg status-info">Load tenants first, then click "Sync to Salesforce".</div>
+        <div id="syncPreStatus" class="status-msg status-info">Load tenants first, then select which to sync and click "Sync to Salesforce".</div>
       </div>
 
       <div class="btn-row">
+        <button class="btn btn-outline" onclick="testSalesforceSyncTab()">Test SF Connection</button>
         <button class="btn btn-sf" id="syncBtn2" onclick="startSync()" disabled>Sync to Salesforce</button>
         <span id="syncStatusMsg" class="status-msg" style="display:none"></span>
+      </div>
+
+      <div class="card-section">
+        <h3>License History Snapshot</h3>
+        <p class="field-note" style="margin-bottom:10px">Independent of the tenant list above — copies License Pool / Licenses In Use from every Salesforce Account flagged <code>Active Production</code> (including non-MSP accounts like on-prem customers) into a new daily License History record, then recomputes which record is latest for that account's week/month. This is what the daily routine runs automatically.</p>
+        <div class="btn-row">
+          <button class="btn btn-outline" id="snapshotHistBtn" onclick="snapshotLicenseHistory()">📸 Snapshot License History Now</button>
+          <span id="snapshotHistStatus" class="status-msg" style="display:none"></span>
+        </div>
       </div>
     </div>
 
@@ -275,10 +346,32 @@
       <div class="card-section">
         <h3>MSP Manager</h3>
         <div class="form-row">
-          <div class="form-group" style="max-width:360px">
+          <div class="form-group">
+            <label for="msp_url">MSP Base URL</label>
+            <input type="text" id="msp_url" placeholder="https://msp.doubleoctopus.io/mt" />
+            <span class="field-note">Leave blank to use the default: https://msp.doubleoctopus.io/mt</span>
+          </div>
+          <div class="form-group" style="max-width:320px">
             <label for="s_email">Admin Email</label>
             <input type="email" id="s_email" placeholder="admin@example.com" />
             <span class="field-note">Pre-fills the login form on next visit</span>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:12px">
+          <div class="form-group">
+            <label for="msp_url_2">Additional MSP Base URL</label>
+            <input type="text" id="msp_url_2" placeholder="https://itgurumsp.doubleoctopus.io/mt" />
+            <span class="field-note">Optional — a second MSP environment to load tenants from, merged with the first on Connect</span>
+          </div>
+          <div class="form-group" style="max-width:320px">
+            <label for="msp_email_2">Additional Admin Email</label>
+            <input type="email" id="msp_email_2" placeholder="admin@example.com" />
+            <span class="field-note">Admin email for the additional environment (can be the same email)</span>
+          </div>
+          <div class="form-group" style="max-width:220px">
+            <label for="msp_name_2">MSP Name (fallback)</label>
+            <input type="text" id="msp_name_2" placeholder="IT-Guru MSP" />
+            <span class="field-note">Used when this environment's tenants don't report an MSP name</span>
           </div>
         </div>
       </div>
@@ -293,7 +386,6 @@
             <span class="field-note">Your org's Lightning URL — used to target the correct instance</span>
           </div>
         </div>
-          <!-- Step 1: Open SAML login -->
         <div style="background:#f7f8fa;border:1px solid #e0e0e0;border-radius:10px;padding:18px 20px;margin-top:4px">
           <div style="font-size:0.82rem;font-weight:700;color:#0d1b2a;margin-bottom:4px">Step 1 — Authenticate via Octopus</div>
           <div style="font-size:0.78rem;color:#666;margin-bottom:12px">Opens the Octopus SSO login in your browser. Complete authentication — you'll land on Salesforce.</div>
@@ -301,7 +393,6 @@
           <span id="samlStatus" class="status-msg" style="display:none;margin-left:10px"></span>
         </div>
 
-        <!-- Step 2: Bookmarklet sends session back -->
         <div style="background:#f7f8fa;border:1px solid #e0e0e0;border-radius:10px;padding:18px 20px;margin-top:12px">
           <div style="font-size:0.82rem;font-weight:700;color:#0d1b2a;margin-bottom:4px">Step 2 — Capture your session (once logged in to Salesforce)</div>
           <div style="font-size:0.78rem;color:#666;margin-bottom:12px">
@@ -311,8 +402,6 @@
             click <strong>Copy</strong> below → paste into the console → press
             <kbd style="background:#eee;padding:1px 6px;border-radius:4px;font-family:monospace">Enter</kbd>.
           </div>
-
-          <!-- Label clearly separated from the code box -->
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
             <span style="font-size:0.72rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.4px">── Console snippet (copy only this) ──</span>
             <button onclick="copyBookmarklet()" style="background:#4a90d9;border:none;color:white;padding:5px 14px;border-radius:6px;font-size:0.78rem;font-weight:600;cursor:pointer">📋 Copy</button>
@@ -321,12 +410,10 @@
           <div id="sessionCaptureStatus" class="status-msg" style="display:none;margin-top:10px"></div>
         </div>
 
-        <!-- Session status indicator -->
         <div id="sessionSavedBox" style="display:none;background:#e9f7ef;border:1px solid #a9dfbf;border-radius:8px;padding:12px 16px;margin-top:12px;font-size:0.82rem;color:#1e8449">
           ✅ <strong>Session token saved.</strong> Click <em>Test Salesforce Connection</em> below to verify.
         </div>
 
-        <!-- Username / password -->
         <div style="margin-top:20px;padding-top:20px;border-top:1px solid #e0e0e0">
           <div style="font-size:0.82rem;font-weight:700;color:#0d1b2a;margin-bottom:4px">OR — Username &amp; Password</div>
           <div style="font-size:0.78rem;color:#666;margin-bottom:14px">Use this if your Salesforce user is not SSO-enforced.</div>
@@ -371,9 +458,19 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ── State ─────────────────────────────────────────────────────────────────────
-let allTenants = [];
+let allTenants  = [];
 let sampleRecord = null;
 let currentToken = "";
+let selectedSet  = new Set();   // Set of globalIdx (index in allTenants)
+let sfStatusMap  = new Map();   // globalIdx -> true (exists in SF) | false (new)
+let sfMspStatus  = {};          // mspLabel -> true | false
+let mspNameMap   = {};          // mspLabel -> overridden SF account name
+let tenantNameMap    = {};      // tenantId -> overridden SF account name
+let savedSelectedIds = [];      // persisted tenant IDs (restored after load)
+let savedMspNameMap  = {};      // persisted MSP name overrides
+let savedTenantNameMap = {};    // persisted tenant name overrides
+let staleAccounts    = [];      // [{id, name, msp_name, active_production, managed_by_msp, license_pool, licenses_in_use}]
+let staleSelectedSet = new Set(); // SF Account Ids selected for deactivation
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 function switchTab(name) {
@@ -426,11 +523,358 @@ function statusBadge(s) {
 function groupByMsp(tenants) {
   const map = new Map();
   for (const t of tenants) {
-    const key = getMspId(t) || getMspName(t);
+    const key = `${t._env || 'primary'}::${getMspId(t) || getMspName(t)}`;
     if (!map.has(key)) map.set(key, { label: getMspName(t), tenants: [] });
     map.get(key).tenants.push(t);
   }
   return [...map.values()].sort((a,b) => a.label.localeCompare(b.label));
+}
+
+// ── Selection helpers ─────────────────────────────────────────────────────────
+function updateSelCount() {
+  const n = selectedSet.size;
+  document.getElementById('selCount').textContent = n === 0
+    ? '0 selected'
+    : `${n} of ${allTenants.length} selected`;
+}
+
+function getSelectedTenants() {
+  if (selectedSet.size === 0) return allTenants;  // fallback: sync all
+  return allTenants.filter((_, i) => selectedSet.has(i));
+}
+
+function selectAll(checked) {
+  if (checked) {
+    allTenants.forEach((_, i) => selectedSet.add(i));
+  } else {
+    selectedSet.clear();
+  }
+  document.querySelectorAll('input.tenant-cb').forEach(cb => { cb.checked = checked; });
+  document.querySelectorAll('input.msp-all-cb').forEach(cb => { cb.checked = checked; cb.indeterminate = false; });
+  updateSelCount();
+}
+
+function selectNewOnly() {
+  selectedSet.clear();
+  allTenants.forEach((t, i) => {
+    const sf = sfStatusMap.get(i);
+    if (sf === false) selectedSet.add(i);  // false = not in SF
+  });
+  document.querySelectorAll('input.tenant-cb').forEach(cb => {
+    const idx = parseInt(cb.dataset.idx);
+    cb.checked = selectedSet.has(idx);
+  });
+  document.querySelectorAll('input.msp-all-cb').forEach(cb => updateMspCbState(cb));
+  updateSelCount();
+}
+
+function onTenantCb(cb) {
+  const idx = parseInt(cb.dataset.idx);
+  if (cb.checked) selectedSet.add(idx);
+  else selectedSet.delete(idx);
+  // Update MSP header checkbox
+  const mspCb = document.querySelector(`input.msp-all-cb[data-msp="${CSS.escape(cb.dataset.msp)}"]`);
+  if (mspCb) updateMspCbState(mspCb);
+  updateSelCount();
+}
+
+function onMspCb(cb) {
+  const mspKey = cb.dataset.msp;
+  const tenantCbs = document.querySelectorAll(`input.tenant-cb[data-msp="${CSS.escape(mspKey)}"]`);
+  const shouldCheck = cb.checked;
+  tenantCbs.forEach(tcb => {
+    tcb.checked = shouldCheck;
+    const idx = parseInt(tcb.dataset.idx);
+    if (shouldCheck) selectedSet.add(idx);
+    else selectedSet.delete(idx);
+  });
+  cb.indeterminate = false;
+  updateSelCount();
+}
+
+function updateMspCbState(mspCb) {
+  const mspKey = mspCb.dataset.msp;
+  const tenantCbs = [...document.querySelectorAll(`input.tenant-cb[data-msp="${CSS.escape(mspKey)}"]`)];
+  const checkedCount = tenantCbs.filter(c => c.checked).length;
+  if (checkedCount === 0) { mspCb.checked = false; mspCb.indeterminate = false; }
+  else if (checkedCount === tenantCbs.length) { mspCb.checked = true; mspCb.indeterminate = false; }
+  else { mspCb.checked = false; mspCb.indeterminate = true; }
+}
+
+// ── Save / restore selection ──────────────────────────────────────────────────
+async function saveSelection() {
+  const selectedIds = [...selectedSet].map(i => getTenantId(allTenants[i]));
+  savedSelectedIds   = selectedIds;
+  savedMspNameMap    = {...mspNameMap};
+  savedTenantNameMap = {...tenantNameMap};
+  try {
+    await fetch('/api/creds/save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ selected_tenant_ids: selectedIds, msp_name_map: mspNameMap, tenant_name_map: tenantNameMap }),
+    });
+    showStatus('selSaveStatus', `Saved ${selectedIds.length} tenants`, 'ok');
+  } catch(e) {
+    showStatus('selSaveStatus', e.message, 'error');
+  }
+  setTimeout(() => showStatus('selSaveStatus', '', 'ok'), 3000);
+}
+
+async function autoAddNewTenants() {
+  if (!allTenants.length) { alert('Load tenants first.'); return; }
+  const btn = document.getElementById('autoAddBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner spinner-dark"></span>Checking…';
+  showStatus('selSaveStatus', 'Checking for new tenants…', 'info');
+  try {
+    const res = await fetch('/api/tenants/auto-add-new', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ tenants: allTenants }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const added = data.added || [];
+    if (added.length) {
+      added.forEach(a => {
+        const idx = allTenants.findIndex(t => getTenantId(t) === a.id);
+        if (idx >= 0) selectedSet.add(idx);
+      });
+      savedSelectedIds = [...selectedSet].map(i => getTenantId(allTenants[i]));
+      renderTree(allTenants);
+      showStatus('selSaveStatus', `Added & saved ${added.length} new tenant(s): ${added.map(a=>a.name).join(', ')}`, 'ok');
+    } else {
+      showStatus('selSaveStatus', 'No new tenants to add.', 'ok');
+      setTimeout(() => showStatus('selSaveStatus', '', 'ok'), 3000);
+    }
+  } catch(e) {
+    showStatus('selSaveStatus', e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🆕 Auto-add New Tenants';
+  }
+}
+
+function applySelectionState() {
+  // Restore MSP name overrides
+  if (Object.keys(savedMspNameMap).length) {
+    mspNameMap = {...savedMspNameMap};
+    document.querySelectorAll('.msp-sf-name-input').forEach(input => {
+      const key = input.dataset.mspKey;
+      if (mspNameMap[key] !== undefined) {
+        input.value = mspNameMap[key];
+        input.classList.toggle('overridden', mspNameMap[key] !== key && mspNameMap[key] !== '');
+      }
+    });
+  }
+  // Restore tenant name overrides
+  if (Object.keys(savedTenantNameMap).length) {
+    tenantNameMap = {...savedTenantNameMap};
+    document.querySelectorAll('.tenant-sf-name-input').forEach(input => {
+      const id   = input.dataset.tenantId;
+      const orig = input.dataset.original;
+      if (tenantNameMap[id] !== undefined) {
+        input.value = tenantNameMap[id];
+        input.classList.toggle('overridden', tenantNameMap[id] !== orig && tenantNameMap[id] !== '');
+      }
+    });
+  }
+  // Restore selected tenants by ID
+  if (savedSelectedIds.length) {
+    const idSet = new Set(savedSelectedIds);
+    allTenants.forEach((t, i) => {
+      if (idSet.has(getTenantId(t))) selectedSet.add(i);
+    });
+    document.querySelectorAll('input.tenant-cb').forEach(cb => {
+      cb.checked = selectedSet.has(parseInt(cb.dataset.idx));
+    });
+    document.querySelectorAll('input.msp-all-cb').forEach(cb => updateMspCbState(cb));
+    updateSelCount();
+    const restored = selectedSet.size;
+    if (restored) showStatus('statusMsg', `Loaded ${allTenants.length} tenants · restored ${restored} saved selections`, 'ok');
+  }
+}
+
+// ── MSP SF name override ──────────────────────────────────────────────────────
+function onMspSfNameInput(input) {
+  const key = input.dataset.mspKey;
+  const val = input.value.trim();
+  mspNameMap[key] = val;
+  input.classList.toggle('overridden', val !== key && val !== '');
+}
+
+function onTenantSfNameInput(input) {
+  const id  = input.dataset.tenantId;
+  const val = input.value.trim();
+  const orig = input.dataset.original;
+  tenantNameMap[id] = val;
+  input.classList.toggle('overridden', val !== orig && val !== '');
+}
+
+// ── Check SF status ───────────────────────────────────────────────────────────
+async function checkSfStatus() {
+  if (!allTenants.length) { alert('Load tenants first.'); return; }
+  const btn = document.getElementById('checkSfBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner spinner-dark"></span>Checking…';
+  showStatus('checkSfStatus', 'Querying Salesforce…', 'info');
+
+  const tenantNames = allTenants.map(getTenantName);
+  const mspNames    = [...new Set(allTenants.map(getMspName))];
+  // Use overridden SF names for MSPs if set
+  const mspSfNames  = mspNames.map(n => mspNameMap[n] || n);
+  const allNames    = [...new Set([...tenantNames, ...mspSfNames])];
+
+  try {
+    const res  = await fetch('/api/sf/check-accounts', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({names: allNames}),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const existing = new Set(data.existing);
+
+    // Update sfStatusMap for each tenant
+    allTenants.forEach((t, i) => {
+      sfStatusMap.set(i, existing.has(getTenantName(t)));
+    });
+    // Update MSP status (check against the SF name, store under original key)
+    mspNames.forEach(n => { sfMspStatus[n] = existing.has(mspNameMap[n] || n); });
+
+    // Apply row classes
+    document.querySelectorAll('input.tenant-cb').forEach(cb => {
+      const idx = parseInt(cb.dataset.idx);
+      const row = cb.closest('tr');
+      const sfVal = sfStatusMap.get(idx);
+      row.classList.toggle('tr-sf-exists', sfVal === true);
+      row.classList.toggle('tr-sf-new',    sfVal === false);
+    });
+    // Apply MSP header classes
+    document.querySelectorAll('.msp-header[data-msp-label]').forEach(header => {
+      const label = header.dataset.mspLabel;
+      header.classList.toggle('msp-sf-exists', sfMspStatus[label] === true);
+      header.classList.toggle('msp-sf-new',    sfMspStatus[label] === false);
+    });
+
+    const newCount      = [...sfStatusMap.values()].filter(v => v === false).length;
+    const existingCount = [...sfStatusMap.values()].filter(v => v === true).length;
+    showStatus('checkSfStatus', `${existingCount} exist · ${newCount} new`, 'ok');
+    document.getElementById('sfLegend').style.display = 'flex';
+    document.getElementById('selectNewBtn').style.display = '';
+  } catch(e) {
+    showStatus('checkSfStatus', e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔍 Check Salesforce';
+  }
+}
+
+// ── Stale Salesforce accounts (deleted from MSP but still active/managed in SF) ─
+function buildExpectedSfNames() {
+  return allTenants.map(t => {
+    const tenantId = getTenantId(t);
+    const raw = getTenantName(t);
+    const override = tenantNameMap[tenantId];
+    return (override !== undefined && override.trim()) ? override.trim() : raw;
+  });
+}
+
+function staleRowHtml(acc) {
+  const esc = s => String(s).replace(/"/g,'&quot;');
+  const isChecked = staleSelectedSet.has(acc.id) ? 'checked' : '';
+  return `<tr class="tr-sf-stale" data-stale-id="${esc(acc.id)}">
+    <td class="cb-td"><input type="checkbox" class="stale-cb" data-id="${esc(acc.id)}" onchange="onStaleCb(this)" ${isChecked}/></td>
+    <td class="tenant-id" title="${esc(acc.id)}">${esc(acc.id)}</td>
+    <td class="tenant-name">${esc(acc.name)}</td>
+    <td><span class="action-badge a-error">SF ONLY — not in MSP</span></td>
+    <td><span class="domain-pill" style="opacity:.5">—</span></td>
+    <td><span class="status-badge s-ERROR">STALE</span></td>
+    <td colspan="3" style="color:#888;font-size:0.76rem">Active Prod: ${acc.active_production?'Yes':'No'} · Managed By MSP: ${acc.managed_by_msp?'Yes':'No'} · Pool ${acc.license_pool ?? '—'} · In Use ${acc.licenses_in_use ?? '—'}</td>
+    <td>—</td>
+  </tr>`;
+}
+
+async function checkStaleAccounts() {
+  if (!allTenants.length) { alert('Load tenants first.'); return; }
+  const btn = document.getElementById('staleCheckBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner spinner-dark"></span>Checking…';
+  showStatus('checkSfStatus', 'Checking Salesforce for stale accounts…', 'info');
+
+  try {
+    const res = await fetch('/api/sf/stale-accounts', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({names: buildExpectedSfNames()}),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    staleAccounts = data.stale || [];
+    staleSelectedSet.clear();
+    renderTree(allTenants);
+
+    const msg = staleAccounts.length
+      ? `Found ${staleAccounts.length} Salesforce account(s) marked active/managed but not in the loaded MSP tenant list — shown in red below.`
+      : 'No stale Salesforce accounts found — everything matches.';
+    showStatus('checkSfStatus', msg, staleAccounts.length ? 'error' : 'ok');
+    document.getElementById('deactivateStaleBtn').style.display = staleAccounts.length ? '' : 'none';
+    updateStaleSelCount();
+  } catch(e) {
+    showStatus('checkSfStatus', e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🧹 Find Stale Accounts';
+  }
+}
+
+function onStaleCb(cb) {
+  const id = cb.dataset.id;
+  if (cb.checked) staleSelectedSet.add(id); else staleSelectedSet.delete(id);
+  updateStaleSelCount();
+}
+
+function updateStaleSelCount() {
+  const btn = document.getElementById('deactivateStaleBtn');
+  if (!btn) return;
+  btn.textContent = staleSelectedSet.size ? `🧹 Deactivate ${staleSelectedSet.size} Selected` : '🧹 Deactivate Selected';
+  btn.disabled = staleSelectedSet.size === 0;
+}
+
+async function deactivateStaleAccounts() {
+  if (!staleSelectedSet.size) return;
+  const ids = [...staleSelectedSet];
+  const ok = confirm(`Deactivate ${ids.length} Salesforce account(s)?\n\nThis sets Active Production and Managed By MSP to false on each — it does NOT delete the account.`);
+  if (!ok) return;
+
+  const btn = document.getElementById('deactivateStaleBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Deactivating…';
+  try {
+    const res = await fetch('/api/sf/deactivate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({account_ids: ids}),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const results = data.results || [];
+    const okIds = new Set(results.filter(r=>r.action==='deactivated').map(r=>r.id));
+    const errs = results.filter(r=>r.action==='error');
+    staleAccounts = staleAccounts.filter(a => !okIds.has(a.id));
+    staleSelectedSet.clear();
+    renderTree(allTenants);
+    showStatus('checkSfStatus', `Deactivated ${okIds.size}${errs.length ? `, ${errs.length} failed` : ''}.`, errs.length ? 'error' : 'ok');
+    document.getElementById('deactivateStaleBtn').style.display = staleAccounts.length ? '' : 'none';
+  } catch(e) {
+    showStatus('checkSfStatus', e.message, 'error');
+  } finally {
+    updateStaleSelCount();
+  }
 }
 
 // ── Render tree ───────────────────────────────────────────────────────────────
@@ -449,20 +893,52 @@ function renderTree(tenants) {
   const container = document.getElementById('treeView');
   container.innerHTML = '';
 
+  // Group stale SF accounts by their SF-facing MSP name so they can be interleaved
+  // into the matching MSP block below.
+  const staleByMsp = new Map();
+  for (const acc of staleAccounts) {
+    const key = (acc.msp_name || '').trim().toLowerCase();
+    if (!staleByMsp.has(key)) staleByMsp.set(key, []);
+    staleByMsp.get(key).push(acc);
+  }
+  const matchedStaleIds = new Set();
+
   for (const group of groups) {
+    const mspKey = group.label;
     const mspActive     = group.tenants.reduce((s,t)=>s+(getActiveUsers(t)??0),0);
     const mspEnterprise = group.tenants.reduce((s,t)=>s+(getEnterpriseUsers(t)??0),0);
     const mspStarter    = group.tenants.reduce((s,t)=>s+(getStarterUsers(t)??0),0);
 
+    const mspSfClass = sfMspStatus[mspKey] === true ? 'msp-sf-exists'
+                     : sfMspStatus[mspKey] === false ? 'msp-sf-new' : '';
+
     const rows = group.tenants.map(t => {
+      const globalIdx = allTenants.indexOf(t);
       const id = getTenantId(t), name = getTenantName(t), domain = getDomain(t);
       const status = getStatus(t), active = getActiveUsers(t);
       const enterprise = getEnterpriseUsers(t), starter = getStarterUsers(t), created = getCreated(t);
-      const search = [group.label,id,name,domain,status].join(' ').toLowerCase();
+      const search = [mspKey,id,name,domain,status].join(' ').toLowerCase();
       const num = v => v!=null ? `<span class="users-count">${v.toLocaleString()}</span>` : '<span class="users-count na">—</span>';
-      return `<tr data-search="${search}">
+      const sfVal = sfStatusMap.get(globalIdx);
+      const sfCls = sfVal === true ? 'tr-sf-exists' : sfVal === false ? 'tr-sf-new' : '';
+      const isChecked = selectedSet.has(globalIdx) ? 'checked' : '';
+      const escapedMsp = mspKey.replace(/"/g, '&quot;');
+      const tenantId = getTenantId(t);
+      const sfTenantVal = tenantNameMap[tenantId] !== undefined ? tenantNameMap[tenantId] : name;
+      const sfTenantOverridden = tenantNameMap[tenantId] !== undefined && tenantNameMap[tenantId] !== name;
+      return `<tr data-search="${search}" data-idx="${globalIdx}" class="${sfCls}">
+        <td class="cb-td"><input type="checkbox" class="tenant-cb" data-idx="${globalIdx}" data-msp="${escapedMsp}" onchange="onTenantCb(this)" ${isChecked}/></td>
         <td class="tenant-id" title="${id}">${id}</td>
         <td class="tenant-name">${name}</td>
+        <td>
+          <input type="text" class="tenant-sf-name-input ${sfTenantOverridden ? 'overridden' : ''}"
+            data-tenant-id="${tenantId.replace(/"/g,'&quot;')}"
+            data-original="${name.replace(/"/g,'&quot;')}"
+            value="${sfTenantVal.replace(/"/g,'&quot;')}"
+            placeholder="${name.replace(/"/g,'&quot;')}"
+            title="Salesforce account name (edit if different)"
+            oninput="onTenantSfNameInput(this)" />
+        </td>
         <td><span class="domain-pill">${domain}</span></td>
         <td>${statusBadge(status)}</td>
         <td>${num(active)}</td><td>${num(enterprise)}</td><td>${num(starter)}</td>
@@ -470,15 +946,32 @@ function renderTree(tenants) {
       </tr>`;
     }).join('');
 
+    const groupSfMspName = (mspNameMap[mspKey] !== undefined ? mspNameMap[mspKey] : mspKey);
+    const staleForGroup = staleByMsp.get(groupSfMspName.trim().toLowerCase()) || [];
+    staleForGroup.forEach(acc => matchedStaleIds.add(acc.id));
+    const staleRows = staleForGroup.map(staleRowHtml).join('');
+
+    const escapedMspAttr = mspKey.replace(/"/g, '&quot;');
+    const sfNameValue = (mspNameMap[mspKey] !== undefined ? mspNameMap[mspKey] : mspKey).replace(/"/g, '&quot;');
     const block = document.createElement('div');
     block.className = 'msp-block';
-    block.dataset.mspLabel = group.label.toLowerCase();
+    block.dataset.mspLabel = mspKey.toLowerCase();
     block.innerHTML = `
-      <div class="msp-header" onclick="toggleMsp(this)">
+      <div class="msp-header ${mspSfClass}" data-msp-label="${escapedMspAttr}" onclick="toggleMsp(this)">
+        <input type="checkbox" class="msp-all-cb" data-msp="${escapedMspAttr}" onclick="event.stopPropagation()" onchange="onMspCb(this)" style="flex-shrink:0" />
         <span class="msp-icon">🏢</span>
         <div>
           <div class="msp-title">${group.label}</div>
-          <div class="msp-subtitle">${group.tenants.length} tenant${group.tenants.length!==1?'s':''} · ${mspActive} active · ${mspEnterprise} enterprise · ${mspStarter} starter</div>
+          <div class="msp-subtitle">${group.tenants.length} tenant${group.tenants.length!==1?'s':''} · ${mspActive} active · ${mspEnterprise} enterprise · ${mspStarter} starter${staleForGroup.length ? ` · <span style="color:#c0392b">${staleForGroup.length} stale in SF</span>` : ''}</div>
+        </div>
+        <div class="msp-sf-name-wrap" onclick="event.stopPropagation()">
+          <span class="msp-sf-name-label">SF Name:</span>
+          <input type="text" class="msp-sf-name-input ${mspNameMap[mspKey] !== undefined && mspNameMap[mspKey] !== mspKey ? 'overridden' : ''}"
+            data-msp-key="${escapedMspAttr}"
+            value="${sfNameValue}"
+            placeholder="${escapedMspAttr}"
+            title="Salesforce account name for this MSP (edit if different)"
+            oninput="onMspSfNameInput(this)" />
         </div>
         <span class="msp-badge">${group.tenants.length}</span>
         <span class="msp-chevron">▼</span>
@@ -486,14 +979,55 @@ function renderTree(tenants) {
       <div class="tenant-body">
         <table>
           <thead><tr>
-            <th>Tenant ID</th><th>Name</th><th>Domain</th><th>Status</th>
+            <th class="cb-th"><input type="checkbox" class="msp-all-cb" data-msp="${escapedMspAttr}" onclick="event.stopPropagation()" onchange="onMspCb(this)" /></th>
+            <th>Tenant ID</th><th>Name</th><th>SF Account Name</th><th>Domain</th><th>Status</th>
             <th>Active Users</th><th>Enterprise Users</th><th>Starter Users</th><th>Created</th>
           </tr></thead>
-          <tbody>${rows}</tbody>
+          <tbody>${rows}${staleRows}</tbody>
         </table>
       </div>`;
     container.appendChild(block);
   }
+
+  // Stale accounts whose MSP couldn't be matched to a loaded group — shown in a
+  // trailing "Salesforce only" block so nothing is silently dropped.
+  const unmatchedStale = staleAccounts.filter(a => !matchedStaleIds.has(a.id));
+  if (unmatchedStale.length) {
+    const byMsp = new Map();
+    for (const acc of unmatchedStale) {
+      const key = acc.msp_name || 'Unknown / Unmatched MSP';
+      if (!byMsp.has(key)) byMsp.set(key, []);
+      byMsp.get(key).push(acc);
+    }
+    for (const [label, accs] of byMsp) {
+      const rows = accs.map(staleRowHtml).join('');
+      const block = document.createElement('div');
+      block.className = 'msp-block';
+      block.innerHTML = `
+        <div class="msp-header" style="border-left:5px solid #c0392b" onclick="toggleMsp(this)">
+          <span class="msp-icon">🗑️</span>
+          <div>
+            <div class="msp-title">${label} <span style="color:#c0392b;font-weight:400;font-size:0.8rem">(Salesforce only — MSP not in loaded tenants)</span></div>
+            <div class="msp-subtitle">${accs.length} stale account${accs.length!==1?'s':''}</div>
+          </div>
+          <span class="msp-badge">${accs.length}</span>
+          <span class="msp-chevron">▼</span>
+        </div>
+        <div class="tenant-body">
+          <table>
+            <thead><tr>
+              <th class="cb-th"></th>
+              <th>Tenant ID</th><th>Name</th><th>SF Account Name</th><th>Domain</th><th>Status</th>
+              <th>Active Users</th><th>Enterprise Users</th><th>Starter Users</th><th>Created</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+      container.appendChild(block);
+    }
+  }
+
+  updateSelCount();
 }
 
 function toggleMsp(header) {
@@ -531,36 +1065,69 @@ function showStatus(id, msg, type) {
   el.style.display = msg ? 'inline-block' : 'none';
 }
 
+async function loginAndFetchEnv(email, base, envLabel, mspNameFallback) {
+  const loginRes = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email, base})});
+  const loginData = await loginRes.json();
+  if (loginData.error) throw new Error(`[${envLabel}] ${loginData.error}`);
+
+  const tenRes = await fetch('/api/tenants',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:loginData.token, base, env:envLabel, msp_name_fallback: mspNameFallback || ''})});
+  const tenData = await tenRes.json();
+  if (tenData.error) throw new Error(`[${envLabel}] ${tenData.error}`);
+  if (tenData.raw) throw new Error(`[${envLabel}] Unexpected response — see debug.`);
+  return { token: loginData.token, tenants: tenData.tenants || [], sample: tenData.sample };
+}
+
 async function fetchData() {
   const email = document.getElementById('email').value.trim();
   if (!email) { showStatus('statusMsg','Enter your admin email.','error'); return; }
   const btn = document.getElementById('loginBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Connecting…';
-  showStatus('statusMsg','Authenticating…','info');
+  showStatus('statusMsg','Authenticating (environment 1 of 1)…','info');
+
+  const creds = await fetch('/api/creds/load').then(r=>r.json()).catch(()=>({}));
+  const has2ndEnv = !!(creds.msp_url_2 && creds.msp_email_2);
+
   try {
-    const loginRes = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
-    const loginData = await loginRes.json();
-    if (loginData.error) throw new Error(loginData.error);
-    currentToken = loginData.token;
+    const primary = await loginAndFetchEnv(email, creds.msp_url || '', 'primary');
+    currentToken = primary.token;
+    let merged = primary.tenants;
+    let sampleRecord = primary.sample;
+    const notices = [];
+
+    if (has2ndEnv) {
+      showStatus('statusMsg','Authenticating (environment 2 of 2)…','info');
+      btn.innerHTML = '<span class="spinner"></span>Loading…';
+      try {
+        const secondary = await loginAndFetchEnv(creds.msp_email_2, creds.msp_url_2, 'secondary', creds.msp_name_2);
+        merged = merged.concat(secondary.tenants);
+        if (!sampleRecord) sampleRecord = secondary.sample;
+        notices.push(`${secondary.tenants.length} from ${creds.msp_url_2.replace(/^https?:\/\//,'')}`);
+      } catch (e2) {
+        notices.push(`secondary environment failed: ${e2.message}`);
+      }
+    }
 
     showStatus('statusMsg','Fetching tenants…','info');
     btn.innerHTML = '<span class="spinner"></span>Loading…';
 
-    const tenRes = await fetch('/api/tenants',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:currentToken})});
-    const tenData = await tenRes.json();
-    if (tenData.error) throw new Error(tenData.error);
-    if (tenData.raw) { showStatus('statusMsg','Unexpected response — see debug.','error'); return; }
-
-    allTenants = tenData.tenants || [];
-    sampleRecord = tenData.sample;
+    allTenants = merged;
+    selectedSet.clear();
+    sfStatusMap.clear();
+    sfMspStatus   = {};
+    mspNameMap    = {};
+    tenantNameMap = {};
+    staleAccounts = [];
+    staleSelectedSet.clear();
+    document.getElementById('deactivateStaleBtn').style.display = 'none';
     renderTree(allTenants);
-    showStatus('statusMsg',`Loaded ${allTenants.length} tenants.`,'ok');
+    applySelectionState();
+    const summary = `Loaded ${allTenants.length} tenants${notices.length ? ' (' + notices.join('; ') + ')' : ''}.`;
+    if (!savedSelectedIds.length) showStatus('statusMsg', summary, notices.some(n=>n.includes('failed')) ? 'error' : 'ok');
     document.getElementById('results').style.display = 'block';
     document.getElementById('syncBtn2').disabled = false;
-    document.getElementById('syncPreStatus').textContent = `${allTenants.length} tenants loaded. Ready to sync.`;
+    document.getElementById('syncPreStatus').textContent = `${allTenants.length} tenants loaded. Select tenants and click Sync.`;
     document.getElementById('syncPreStatus').className = 'status-msg status-ok';
     if (sampleRecord) document.getElementById('debugPanel').textContent = JSON.stringify(sampleRecord,null,2);
-    // Save email for next time
     await fetch('/api/creds/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({msp_email:email})});
   } catch(e) {
     showStatus('statusMsg',e.message,'error');
@@ -574,14 +1141,16 @@ function downloadExcel() {
   if (!allTenants.length) { alert('No data to export.'); return; }
   const groups = groupByMsp(allTenants);
   const wb = XLSX.utils.book_new();
-  const flatRows = [['MSP','Tenant ID','Tenant Name','Domain','Status','Active Users','Enterprise Users','Starter Users','Created']];
+  const flatRows = [['MSP','Tenant ID','Tenant Name','Domain','Status','Active Users','Enterprise Users','Starter Users','Created','In Salesforce']];
   for (const g of groups) {
     for (const t of g.tenants) {
-      flatRows.push([g.label,getTenantId(t),getTenantName(t),getDomain(t),getStatus(t),getActiveUsers(t)??'',getEnterpriseUsers(t)??'',getStarterUsers(t)??'',getCreated(t)]);
+      const idx = allTenants.indexOf(t);
+      const sfVal = sfStatusMap.has(idx) ? (sfStatusMap.get(idx) ? 'Yes' : 'No') : '';
+      flatRows.push([g.label,getTenantId(t),getTenantName(t),getDomain(t),getStatus(t),getActiveUsers(t)??'',getEnterpriseUsers(t)??'',getStarterUsers(t)??'',getCreated(t),sfVal]);
     }
   }
   const wsAll = XLSX.utils.aoa_to_sheet(flatRows);
-  wsAll['!cols'] = [28,28,28,20,14,13,16,13,14].map(w=>({wch:w}));
+  wsAll['!cols'] = [28,28,28,20,14,13,16,13,14,12].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, wsAll, 'All Tenants');
 
   const sumRows = [['MSP','Tenants','Active Users','Enterprise Users','Starter Users','Live','Suspended','Error','Other']];
@@ -605,14 +1174,24 @@ async function startSync() {
     alert('Please load tenants first (Tenants tab).');
     switchTab('tenants'); return;
   }
+
+  const toSync = getSelectedTenants();
+  const usingAll = selectedSet.size === 0;
+
+  if (usingAll) {
+    const ok = confirm(`No tenants are selected — sync all ${allTenants.length} tenants?`);
+    if (!ok) return;
+  }
+
   const btn1 = document.getElementById('syncBtn');
   const btn2 = document.getElementById('syncBtn2');
-  [btn1,btn2].forEach(b=>{b.disabled=true; b.innerHTML='<span class="spinner"></span>Syncing…';});
+  const label = `Syncing ${toSync.length}…`;
+  [btn1,btn2].forEach(b=>{b.disabled=true; b.innerHTML=`<span class="spinner"></span>${label}`;});
   showStatus('syncStatusMsg','Syncing with Salesforce…','info');
   switchTab('sync');
 
   try {
-    const res = await fetch('/api/sf/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tenants:allTenants})});
+    const res = await fetch('/api/sf/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tenants:toSync, msp_name_map:mspNameMap, tenant_name_map:tenantNameMap})});
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     renderSyncResults(data.results || []);
@@ -656,11 +1235,8 @@ function renderSyncResults(results) {
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────────
-// ── SAML / session flow ───────────────────────────────────────────────────────
-
 function buildBookmarklet() {
   const port = 5070;
-  // Try multiple ways to extract the SF session ID from the Lightning page
   const code =
 `(function(){
   var sid =
@@ -684,7 +1260,7 @@ function copyBookmarklet() {
   navigator.clipboard.writeText(code).then(() => {
     const btn = event.target;
     btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = 'Copy', 2000);
+    setTimeout(() => btn.textContent = '📋 Copy', 2000);
   });
 }
 
@@ -697,7 +1273,6 @@ async function openSamlLogin() {
     document.getElementById('samlStatus').textContent = 'Browser opened — complete Octopus authentication, then follow Step 2.';
     document.getElementById('samlStatus').className = 'status-msg status-info';
     document.getElementById('samlStatus').style.display = 'inline-block';
-    // Start polling for session capture
     pollForSession();
   } catch(e) {
     document.getElementById('samlStatus').textContent = e.message;
@@ -725,11 +1300,8 @@ function pollForSession() {
       }
     } catch(e) { /* ignore */ }
   }, 2000);
-  // Stop polling after 5 minutes
   setTimeout(() => clearInterval(_pollTimer), 300000);
 }
-
-// ── Settings ──────────────────────────────────────────────────────────────────
 
 async function loadSettings() {
   buildBookmarklet();
@@ -740,27 +1312,55 @@ async function loadSettings() {
       document.getElementById('email').value   = c.msp_email;
       document.getElementById('s_email').value = c.msp_email;
     }
+    if (c.msp_url)      document.getElementById('msp_url').value      = c.msp_url;
+    if (c.msp_url_2)    document.getElementById('msp_url_2').value    = c.msp_url_2;
+    if (c.msp_email_2)  document.getElementById('msp_email_2').value  = c.msp_email_2;
+    if (c.msp_name_2)   document.getElementById('msp_name_2').value   = c.msp_name_2;
     if (c.sf_url)      document.getElementById('sf_url').value      = c.sf_url;
     if (c.sf_username) document.getElementById('sf_username').value = c.sf_username;
     if (c.sf_sandbox)  document.getElementById('sf_sandbox').checked = c.sf_sandbox;
+    // Password fields never show saved values — show placeholder instead
+    if (c.sf_password_saved) {
+      document.getElementById('sf_password').placeholder = '••••••••  (saved — leave blank to keep)';
+    }
+    if (c.sf_token_saved) {
+      document.getElementById('sf_token').placeholder = '(saved — leave blank to keep)';
+    }
+    // Show active environment in header
+    const envLabel = c.msp_url || 'msp.doubleoctopus.io/mt';
+    document.getElementById('headerEnv').textContent = envLabel.replace(/^https?:\/\//, '');
     if (c.sf_session_id_saved) {
       document.getElementById('sessionSavedBox').style.display = 'block';
     }
+    savedSelectedIds   = c.selected_tenant_ids || [];
+    savedMspNameMap    = c.msp_name_map || {};
+    savedTenantNameMap = c.tenant_name_map || {};
   } catch(e) { /* no saved creds yet */ }
 }
 
 async function saveSettings() {
   const payload = {
-    msp_email:   document.getElementById('s_email').value.trim(),
-    sf_url:      document.getElementById('sf_url').value.trim(),
-    sf_username: document.getElementById('sf_username').value.trim(),
-    sf_password: document.getElementById('sf_password').value,
-    sf_token:    document.getElementById('sf_token').value,
-    sf_sandbox:  document.getElementById('sf_sandbox').checked,
+    msp_url:      document.getElementById('msp_url').value.trim(),
+    msp_email:    document.getElementById('s_email').value.trim(),
+    msp_url_2:    document.getElementById('msp_url_2').value.trim(),
+    msp_email_2:  document.getElementById('msp_email_2').value.trim(),
+    msp_name_2:   document.getElementById('msp_name_2').value.trim(),
+    sf_url:       document.getElementById('sf_url').value.trim(),
+    sf_username:  document.getElementById('sf_username').value.trim(),
+    sf_sandbox:   document.getElementById('sf_sandbox').checked,
   };
+  // Only send password/token if the user actually typed a new value —
+  // password inputs never auto-fill from saved creds, so an empty field
+  // means "keep existing", not "clear it".
+  const pw  = document.getElementById('sf_password').value;
+  const tok = document.getElementById('sf_token').value;
+  if (pw)  payload.sf_password = pw;
+  if (tok) payload.sf_token    = tok;
   if (payload.msp_email) document.getElementById('email').value = payload.msp_email;
   try {
     await fetch('/api/creds/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const envLabel = payload.msp_url || 'msp.doubleoctopus.io/mt';
+    document.getElementById('headerEnv').textContent = envLabel.replace(/^https?:\/\//, '');
     showStatus('settingsStatus','Settings saved.','ok');
     setTimeout(()=>showStatus('settingsStatus','','ok'),3000);
   } catch(e) {
@@ -777,6 +1377,37 @@ async function testSalesforce() {
     showStatus('settingsStatus',`✅ Connected to: ${data.org}`,'ok');
   } catch(e) {
     showStatus('settingsStatus',`❌ ${e.message}`,'error');
+  }
+}
+
+async function testSalesforceSyncTab() {
+  showStatus('syncStatusMsg','Testing Salesforce connection…','info');
+  try {
+    const res = await fetch('/api/sf/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    showStatus('syncStatusMsg',`✅ Connected to: ${data.org}`,'ok');
+  } catch(e) {
+    showStatus('syncStatusMsg',`❌ ${e.message}`,'error');
+  }
+}
+
+async function snapshotLicenseHistory() {
+  const btn = document.getElementById('snapshotHistBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Snapshotting…';
+  showStatus('snapshotHistStatus','Copying license usage into today\'s history snapshot…','info');
+  try {
+    const res = await fetch('/api/sf/snapshot-license-history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const msg = `${data.total_accounts} active-production account(s) checked — ${data.created} created, ${data.updated} updated${data.errors ? `, ${data.errors} errors` : ''}.`;
+    showStatus('snapshotHistStatus', msg, data.errors ? 'error' : 'ok');
+  } catch(e) {
+    showStatus('snapshotHistStatus',`❌ ${e.message}`,'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '📸 Snapshot License History Now';
   }
 }
 

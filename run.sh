@@ -10,7 +10,7 @@ if ! python3 -c "import flask, requests" 2>/dev/null; then
   pip3 install -r requirements.txt --break-system-packages -q
 fi
 
-echo "Starting on http://localhost:5050"
+echo "Starting on http://localhost:5070"
 echo "Press Ctrl+C to stop."
 echo ""
 python3 app.py
