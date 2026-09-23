@@ -386,101 +386,69 @@ def _sync_license(sf, account_id, tenant_name, msp_name, total_users, results):
 
 
 # ── License history snapshots ─────────────────────────────────────────────────
-# Independent of the MSP tenant sync — walks every Salesforce Account flagged
-# Active_production__c (which includes on-prem / non-MSP customers like KDDI that
-# have no MSP tenant record at all) and drops one License_History__c row per
-# account per day, then recomputes which row is "latest" for that account's week
-# and month.
+# The Salesforce scheduled Flow "AccountLicenseWeekly" owns License_History__c: it
+# runs nightly, creates one row per account per day, sets Snapshot_Week__c (weeks
+# start on SUNDAY) / Snapshot_Month__c / Snapshot_Year__c, and moves the
+# is_Latest_for_week__c / Is_Latest_For_Month__c flags onto the new row (clearing
+# them only within the same week / month).
+#
+# This job only refreshes License_Count__c on today's row with the post-sync
+# Account numbers, for every Active_production__c Account (incl. on-prem / non-MSP
+# customers like KDDI). It never rewrites the period fields or flags of an existing
+# row. If the Flow hasn't produced today's row (account created after the Flow ran,
+# or the Flow failed), it creates one using exactly the Flow's rules so the two
+# never disagree.
 
 def _snapshot_dates(today):
-    monday = today - timedelta(days=today.weekday())
+    week_start = today - timedelta(days=(today.weekday() + 1) % 7)  # Sunday, same as the Flow
     month_first = today.replace(day=1)
     year_first = today.replace(month=1, day=1)
-    return today.isoformat(), monday.isoformat(), month_first.isoformat(), year_first.isoformat()
+    return today.isoformat(), week_start.isoformat(), month_first.isoformat(), year_first.isoformat()
 
 
-def _reconcile_latest_flags(sf, account_id, week_str, month_str, results):
-    """Idempotent, self-healing pass: for this account's current week group and
-    month group, recompute from scratch (by querying every record currently in
-    the group) which single record has the max Snapshot_day__c, and reconcile
-    every record's flag to match that — rather than assuming the record just
-    written by this run is the latest and only clearing "the others". The old
-    assume-then-clear approach broke in two ways: (1) it unconditionally
-    flagged the just-written record True even when an out-of-order/backfilled
-    row already had a later day in the same group, and (2) a partial failure
-    while clearing stale flags on other rows left duplicate True flags behind
-    with no way to self-correct on a later run, since the next run would just
-    assume ITS new record was the latest without ever re-checking the rest of
-    the group. Recomputing the whole group from scratch every time is
-    self-healing: whatever state the group is in, this converges it to exactly
-    one True record (the real max day) on every single run, in insert order or
-    out of it, with or without a prior partial failure."""
-    for date_field, flag_field, period_value, label in [
-        ("Snapshot_Week__c", "is_Latest_for_week__c", week_str, "week"),
-        ("Snapshot_Month__c", "Is_Latest_For_Month__c", month_str, "month"),
+def _take_latest_flags(sf, account_id, week_str, month_str):
+    """Mirror of the Flow: clear the latest flags only inside the same week / month,
+    so the row about to be created becomes the single latest one for both."""
+    for date_field, flag_field, period_value in [
+        ("Snapshot_Week__c", "is_Latest_for_week__c", week_str),
+        ("Snapshot_Month__c", "Is_Latest_For_Month__c", month_str),
     ]:
-        try:
-            group = sf.query_all(
-                f"SELECT Id, Snapshot_day__c, CreatedDate, {flag_field} FROM License_History__c "
-                f"WHERE Account__c = '{account_id}' AND {date_field} = {period_value}"
-            )["records"]
-        except Exception as e:
-            results.append({"type": "license_history", "account_id": account_id, "action": "error",
-                             "detail": f"{label} reconcile query failed: {e}"})
-            continue
-
-        dated = [r for r in group if r.get("Snapshot_day__c")]
-        if not dated:
-            continue  # no record in the group has a real day yet — nothing to reconcile
-
-        max_day = max(r["Snapshot_day__c"] for r in dated)
-        winners = [r for r in dated if r["Snapshot_day__c"] == max_day]
-        if len(winners) > 1:
-            winners.sort(key=lambda r: r["CreatedDate"], reverse=True)
-            results.append({"type": "license_history", "account_id": account_id, "action": "warning",
-                             "detail": f"{label} tie on {max_day}: {len(winners)} records share the max day; "
-                                       f"picked most-recently-created {winners[0]['Id']}"})
-        winner_id = winners[0]["Id"]
-
-        for r in group:
-            desired = (r["Id"] == winner_id)
-            if bool(r.get(flag_field)) != desired:
-                try:
-                    sf.License_History__c.update(r["Id"], {flag_field: desired})
-                except Exception as e:
-                    results.append({"type": "license_history", "account_id": account_id, "action": "error",
-                                     "detail": f"failed to reconcile {label} flag on {r['Id']}: {e}"})
+        current = sf.query_all(
+            f"SELECT Id FROM License_History__c WHERE Account__c = '{account_id}' "
+            f"AND {date_field} = {period_value} AND {flag_field} = true"
+        )["records"]
+        for r in current:
+            sf.License_History__c.update(r["Id"], {flag_field: False})
 
 
 def _upsert_license_history(sf, account_id, license_count, today_str, week_str, month_str, year_str, results):
     # Account_Month_Key__c and Active_Production__c are not writable via the API for
-    # this user (INVALID_FIELD_FOR_INSERT_UPDATE) — they're populated Salesforce-side
-    # (formula/Flow) from Account__c + Snapshot_Month__c, so we omit them here.
-    # is_Latest_for_week__c/Is_Latest_For_Month__c are required fields but their real
-    # value is decided by _reconcile_latest_flags right after, from the whole group —
-    # not from assuming this new/updated record is automatically the latest.
-    fields = {
-        "Account__c": account_id,
-        "License_Count__c": license_count or 0,
-        "Snapshot_day__c": today_str,
-        "Snapshot_Week__c": week_str,
-        "Snapshot_Month__c": month_str,
-        "Snapshot_Year__c": year_str,
-        "Created_By_Job__c": "msp-portal-daily-sync",
-        "is_Latest_for_week__c": False,
-        "Is_Latest_For_Month__c": False,
-    }
+    # this user (INVALID_FIELD_FOR_INSERT_UPDATE) — they're populated Salesforce-side.
     try:
         existing = sf.query(
             f"SELECT Id FROM License_History__c WHERE Account__c = '{account_id}' "
-            f"AND Snapshot_day__c = {today_str} LIMIT 1"
+            f"AND Snapshot_day__c = {today_str} ORDER BY CreatedDate LIMIT 1"
         )
         if existing["records"]:
             hist_id = existing["records"][0]["Id"]
-            sf.License_History__c.update(hist_id, fields)
+            sf.License_History__c.update(hist_id, {
+                "License_Count__c": license_count or 0,
+                "Created_By_Job__c": "msp-portal-daily-sync",
+            })
             action = "updated"
         else:
-            created = sf.License_History__c.create(fields)
+            _take_latest_flags(sf, account_id, week_str, month_str)
+            created = sf.License_History__c.create({
+                "Account__c": account_id,
+                "License_Count__c": license_count or 0,
+                "Snapshot_day__c": today_str,
+                "Snapshot_Week__c": week_str,
+                "Snapshot_Month__c": month_str,
+                "Snapshot_Year__c": year_str,
+                "Created_By_Job__c": "msp-portal-daily-sync",
+                "is_Latest_for_week__c": True,
+                "Is_Latest_For_Month__c": True,
+            })
             hist_id = created["id"]
             action = "created"
     except Exception as e:
@@ -489,14 +457,12 @@ def _upsert_license_history(sf, account_id, license_count, today_str, week_str, 
 
     results.append({"type": "license_history", "id": hist_id, "account_id": account_id, "action": action})
 
-    _reconcile_latest_flags(sf, account_id, week_str, month_str, results)
-
 
 @app.route("/api/sf/snapshot-license-history", methods=["POST"])
 def sf_snapshot_license_history():
     """Daily snapshot: copy License_Pool__c/Licenses_In_Use__c from every
-    Active_production__c Salesforce Account into a new License_History__c record for
-    today, and recompute the latest-for-week/latest-for-month flags for that account."""
+    Active_production__c Salesforce Account into today's License_History__c row
+    (normally already created by the AccountLicenseWeekly Flow)."""
     try:
         sf = _get_sf()
     except Exception as e:
