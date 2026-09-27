@@ -5,17 +5,27 @@ filters to the currently saved tenant selection, and syncs to Salesforce via the
 Reads credentials.json fresh on every run."""
 import os
 import sys
+import time
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from app import app as flask_app, load_creds
+
+# The MSP login is approved by a push on the phone; if nobody approves it the login
+# times out. Instead of skipping the whole day, wait and try again.
+LOGIN_ATTEMPTS = 3            # 18:00, 18:30, 19:00
+LOGIN_RETRY_DELAY_SECONDS = 30 * 60
+
+
+class LoginFailed(RuntimeError):
+    pass
 
 
 def login_and_fetch(client, email, base, env_label, msp_name_fallback=""):
     login_resp = client.post("/api/login", json={"email": email, "base": base})
     login_data = login_resp.get_json()
     if login_resp.status_code != 200 or not login_data or login_data.get("error"):
-        raise RuntimeError(f"[{env_label}] login failed: {login_data}")
+        raise LoginFailed(f"[{env_label}] login failed: {login_data}")
 
     ten_resp = client.post("/api/tenants", json={"token": login_data["token"], "base": base, "env": env_label, "msp_name_fallback": msp_name_fallback})
     ten_data = ten_resp.get_json()
@@ -38,8 +48,18 @@ def main():
         sys.exit(1)
 
     with flask_app.test_client() as client:
-        print(f"Logging into primary MSP environment as {email}...")
-        tenants = login_and_fetch(client, email, creds.get("msp_url", ""), "primary")
+        for attempt in range(1, LOGIN_ATTEMPTS + 1):
+            print(f"Logging into primary MSP environment as {email} (attempt {attempt}/{LOGIN_ATTEMPTS})...", flush=True)
+            try:
+                tenants = login_and_fetch(client, email, creds.get("msp_url", ""), "primary")
+                break
+            except LoginFailed as e:
+                if attempt == LOGIN_ATTEMPTS:
+                    print(f"ERROR: {e} — giving up after {LOGIN_ATTEMPTS} attempts", flush=True)
+                    raise
+                print(f"WARNING: {e} — retrying in {LOGIN_RETRY_DELAY_SECONDS // 60} minutes "
+                      f"(approve the push on your phone)", flush=True)
+                time.sleep(LOGIN_RETRY_DELAY_SECONDS)
         print(f"Fetched {len(tenants)} tenants from primary")
 
         url_2 = (creds.get("msp_url_2") or "").strip()
