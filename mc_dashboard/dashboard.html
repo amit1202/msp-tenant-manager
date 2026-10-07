@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Octopus Live Status</title>
+<!--SNAPSHOT-->
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --ring: rgba(11,11,11,0.10);
+  --s-app: #2a78d6;
+  --s-win: #eb6834;
+  --s-mac: #1baf7a;
+  --s-linux: #eda100;
+  --track: #e8f0fb;
+  --good: #0ca30c;
+  --good-text: #006300;
+  --warning: #fab219;
+  --critical: #d03b3b;
+  --critical-text: #b42a2a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --ring: rgba(255,255,255,0.10);
+    --s-app: #3987e5;
+    --s-win: #d95926;
+    --s-mac: #199e70;
+    --s-linux: #c98500;
+    --track: #1f2a38;
+    --good-text: #0ca30c;
+    --critical-text: #e66767;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --ring: rgba(255,255,255,0.10);
+  --s-app: #3987e5;
+  --s-win: #d95926;
+  --s-mac: #199e70;
+  --s-linux: #c98500;
+  --track: #1f2a38;
+  --good-text: #0ca30c;
+  --critical-text: #e66767;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: var(--page); color: var(--ink);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.wrap { max-width: 1280px; margin: 0 auto; padding: 24px 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; margin-bottom: 20px; }
+h1 { font-size: 22px; font-weight: 650; margin: 0; letter-spacing: -0.01em; }
+.sub { color: var(--ink-2); margin-top: 2px; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; color: var(--ink-2); font-size: 13px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--ring); color: var(--ink); font-weight: 550; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); flex: none; }
+.dot.bad { background: var(--critical); }
+.dot.warn { background: var(--warning); }
+.dot.live { animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+@media (prefers-reduced-motion: reduce) { .dot.live { animation: none; } }
+a.link { text-decoration: none; display: inline-block; }
+button.link:disabled { opacity: .6; cursor: progress; }
+.link { font: inherit; color: var(--ink); background: var(--surface); border: 0; box-shadow: inset 0 0 0 1px var(--ring); border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+.link:hover { box-shadow: inset 0 0 0 1px var(--axis); }
+
+.grid { display: grid; gap: 16px; }
+.kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.two { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+@media (max-width: 1000px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kpis .hero { grid-column: 1 / -1; } .two { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--surface); border-radius: 12px; box-shadow: inset 0 0 0 1px var(--ring); padding: 18px 20px; min-width: 0; }
+.card h2 { font-size: 14px; font-weight: 600; margin: 0 0 2px; }
+.card .hint { color: var(--muted); font-size: 12.5px; margin: 0 0 14px; }
+.section { margin-top: 16px; }
+
+.tile .label { color: var(--ink-2); font-size: 13px; }
+.tile .value { font-size: 32px; font-weight: 650; letter-spacing: -0.02em; margin: 4px 0 2px; }
+.tile.hero .value { font-size: 52px; line-height: 1.05; }
+.tile .foot { color: var(--muted); font-size: 12.5px; }
+.tile .foot b { color: var(--ink-2); font-weight: 600; }
+.meter { height: 6px; border-radius: 3px; background: var(--track); margin: 10px 0 6px; overflow: hidden; }
+.meter > span { display: block; height: 100%; background: var(--s-app); border-radius: 3px; }
+.status-line { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-2); }
+.status-line svg { flex: none; }
+
+/* hourly chart */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink-2); margin-bottom: 10px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: 220px; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); color: var(--ink); box-shadow: 0 4px 16px rgba(0,0,0,.14), inset 0 0 0 1px var(--ring); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; white-space: nowrap; opacity: 0; transition: opacity .1s; z-index: 2; }
+.tip .row { display: flex; align-items: center; gap: 6px; }
+.tip .row b { margin-left: auto; padding-left: 14px; font-variant-numeric: tabular-nums; }
+.tip i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+/* bars */
+.bars { display: grid; gap: 9px; }
+.bar-row { display: grid; grid-template-columns: minmax(110px, 38%) 1fr auto; align-items: center; gap: 10px; font-size: 13px; }
+.bar-row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+.bar-row .track { height: 14px; position: relative; }
+.bar-row .fill { height: 14px; border-radius: 0 4px 4px 0; background: var(--s-app); min-width: 2px; }
+.bar-row .num { font-variant-numeric: tabular-nums; color: var(--ink-2); min-width: 2.5em; text-align: right; }
+.bar-row .num small { color: var(--critical-text); margin-left: 4px; }
+
+.ws { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ws .os { border-radius: 10px; box-shadow: inset 0 0 0 1px var(--ring); padding: 12px 14px; }
+.ws .os .k { display: flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 13px; }
+.ws .os .k i { width: 10px; height: 10px; border-radius: 3px; }
+.ws .os .v { font-size: 28px; font-weight: 650; margin-top: 2px; }
+.ws .os .f { color: var(--muted); font-size: 12px; }
+.split { display: flex; height: 14px; gap: 2px; margin: 16px 0 6px; }
+.split span { display: block; height: 100%; }
+.split span:first-child { border-radius: 4px 0 0 4px; }
+.split span:last-child { border-radius: 0 4px 4px 0; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px; padding: 0 8px 8px 0; border-bottom: 1px solid var(--grid); }
+td { padding: 9px 8px 9px 0; border-bottom: 1px solid var(--grid); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+.rank { color: var(--muted); width: 22px; }
+.who { font-weight: 550; }
+.mini { display: flex; height: 6px; gap: 2px; margin-top: 5px; max-width: 160px; }
+.mini span { height: 100%; border-radius: 2px; }
+
+.health { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; margin-bottom: 14px; }
+.health > div { display: flex; align-items: center; gap: 8px; font-size: 13px; min-width: 0; }
+.health > div.bad { grid-column: 1 / -1; align-items: flex-start; }
+.health svg { flex: none; }
+.health .m { display: block; color: var(--muted); font-size: 12px; }
+.err { font-size: 12.5px; }
+.err td:first-child { white-space: nowrap; color: var(--muted); }
+.err .msg { color: var(--ink-2); word-break: break-word; }
+.banner { display: none; margin-bottom: 16px; padding: 10px 14px; border-radius: 10px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--critical); color: var(--ink); font-size: 13px; }
+.stack { display: grid; gap: 16px; align-content: start; min-width: 0; }
+.bar-row .fill.method { background: var(--ink-2); opacity: .55; }
+.feed .meta-r { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; text-align: right; }
+.feed .via { font-size: 11.5px; color: var(--ink-2); white-space: nowrap; }
+.feed { display: grid; gap: 0; }
+.feed .item { display: grid; grid-template-columns: 64px 10px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--grid); font-size: 13px; }
+.feed .item:last-child { border-bottom: 0; }
+.feed .item.fresh { animation: fresh 2.5s ease-out; }
+@keyframes fresh { from { background: var(--track); } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .feed .item.fresh { animation: none; } }
+.feed .t { color: var(--muted); font-variant-numeric: tabular-nums; }
+.feed .sw { width: 10px; height: 10px; border-radius: 3px; }
+.feed .what { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed .what span { color: var(--ink-2); }
+.feed .o { font-size: 12px; color: var(--muted); }
+.feed .o.bad { color: var(--critical-text); }
+.delta { color: var(--good-text); font-weight: 600; }
+.searchbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: -6px 0 18px; }
+.search { position: relative; flex: 1 1 320px; max-width: 460px; }
+.search input { width: 100%; font: inherit; color: var(--ink); background: var(--surface); border: 0; box-shadow: inset 0 0 0 1px var(--ring); border-radius: 10px; padding: 9px 12px 9px 34px; }
+.search input:focus { outline: 2px solid var(--s-app); outline-offset: 1px; }
+.search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.suggest { position: absolute; z-index: 5; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.16), inset 0 0 0 1px var(--ring); padding: 4px; display: none; max-height: 320px; overflow: auto; }
+.suggest.open { display: block; }
+.suggest button { display: flex; width: 100%; justify-content: space-between; gap: 12px; font: inherit; color: var(--ink); background: none; border: 0; border-radius: 6px; padding: 7px 10px; cursor: pointer; text-align: left; }
+.suggest button:hover, .suggest button.active { background: var(--track); }
+.suggest small { color: var(--muted); white-space: nowrap; }
+.chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-radius: 999px; background: var(--track); font-weight: 550; }
+.chip button { font: inherit; border: 0; background: none; color: var(--ink-2); cursor: pointer; padding: 0 4px; font-size: 16px; line-height: 1; }
+.kind { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-right: 6px; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; font-size: 13px; margin: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.bar-row.link, .os.link { cursor: pointer; }
+.bar-row.link:hover .name, .os.link:hover .v { text-decoration: underline; }
+.tag { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; box-shadow: inset 0 0 0 1px var(--ring); color: var(--ink-2); }
+.tag.good { color: var(--good-text); }
+.tag.bad { color: var(--critical-text); }
+footer { margin-top: 22px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.empty { color: var(--muted); font-size: 13px; padding: 12px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1 id="title">Octopus live status</h1>
+      <div class="sub" id="subtitle">Loading…</div>
+    </div>
+    <div class="meta">
+      <span class="pill" id="health-pill" role="button" tabindex="0" title="Show system health details" style="cursor:pointer"><span class="dot"></span><span>Checking…</span></span>
+      <span id="updated"></span>
+      <button class="link" id="refresh" hidden title="Fetch the latest data from the Management Console now">Refresh now</button>
+      <button class="link" id="dl" hidden>Download snapshot</button>
+      <a class="link" id="settings" href="settings" hidden>Settings</a>
+    </div>
+  </header>
+
+  <div class="searchbar" id="searchbar" hidden>
+    <div class="search">
+      <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" stroke="var(--muted)" stroke-width="1.6" fill="none"/><path d="M11 11l3.5 3.5" stroke="var(--muted)" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <input id="q" type="search" placeholder="Search a user, application or workstation…" autocomplete="off" aria-label="Search user, application or workstation" role="combobox" aria-expanded="false" aria-controls="suggest">
+      <div class="suggest" id="suggest" role="listbox"></div>
+    </div>
+    <span class="chip" id="chip" hidden><span id="chip-name"></span><button type="button" id="clear" aria-label="Show all users" title="Back to all users">×</button></span>
+  </div>
+
+  <div class="banner" id="banner"></div>
+
+  <section class="grid kpis">
+    <div class="card tile hero">
+      <div class="label" id="k-auth-label">Authentications, last 24 h</div>
+      <div class="value" id="k-auth">–</div>
+      <div class="foot" id="k-auth-foot"></div>
+    </div>
+    <div class="card tile">
+      <div class="label" id="k-enrolled-label">Enrolled users</div>
+      <div class="value" id="k-enrolled">–</div>
+      <div class="meter"><span id="k-enrolled-bar" style="width:0"></span></div>
+      <div class="foot" id="k-enrolled-foot"></div>
+    </div>
+    <div class="card tile">
+      <div class="label" id="k-active-label">Active users, last 24 h</div>
+      <div class="value" id="k-active">–</div>
+      <div class="foot" id="k-active-foot"></div>
+    </div>
+    <div class="card tile">
+      <div class="label" id="k-services-label">Protected services</div>
+      <div class="value" id="k-services">–</div>
+      <div class="foot" id="k-services-foot"></div>
+    </div>
+    <div class="card tile">
+      <div class="label" id="k-err-label">System errors, last 24 h</div>
+      <div class="value" id="k-errors">–</div>
+      <div class="status-line" id="k-errors-foot"></div>
+    </div>
+  </section>
+
+  <section class="card section">
+    <h2 id="chart-title">Authentications per day</h2>
+    <p class="hint" id="chart-hint">Successful sign-ins to applications and workstation logons / unlocks</p>
+    <div class="legend">
+      <span><i style="background:var(--s-app)"></i>Applications</span>
+      <span><i style="background:var(--s-win)"></i>Windows workstations</span>
+      <span><i style="background:var(--s-mac)"></i>macOS workstations</span>
+    </div>
+    <div class="chart" id="hourly"><div class="tip" id="tip"></div></div>
+  </section>
+
+  <section class="grid two section">
+    <div class="card">
+      <h2>Live authentication feed</h2>
+      <p class="hint" id="feed-hint">Most recent sign-ins, newest first</p>
+      <div class="feed" id="feed"></div>
+    </div>
+    <div class="stack">
+      <div class="card">
+        <h2>Today</h2>
+        <p class="hint" id="today-hint"></p>
+        <div class="ws" id="today"></div>
+      </div>
+      <div class="card">
+        <h2>Authenticators used</h2>
+        <p class="hint" id="auth-hint">How users proved who they are, from each sign-in's session</p>
+        <div class="bars" id="authenticators"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid two section">
+    <div class="card">
+      <h2>Authentications by application</h2>
+      <p class="hint" id="apps-hint"></p>
+      <div class="bars" id="apps"></div>
+    </div>
+    <div class="card">
+      <h2 id="ws-title">Workstations</h2>
+      <p class="hint" id="ws-hint">Registered machines running Octopus Desk, and how many signed in during the window</p>
+      <div class="ws" id="ws"></div>
+      <div class="split" id="ws-split"></div>
+      <div class="foot" style="color:var(--muted);font-size:12.5px" id="ws-foot"></div>
+    </div>
+  </section>
+
+  <section class="grid two section">
+    <div class="card">
+      <h2 id="top-title">Top 5 active users</h2>
+      <p class="hint" id="top-hint">Ranked by successful authentications in the window · click a name to drill in</p>
+      <table>
+        <thead id="top-head"></thead>
+        <tbody id="top"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2 id="health-title">System health</h2>
+      <p class="hint">Live component status from the Management Console</p>
+      <div class="health" id="health"></div>
+      <h2 style="margin-top:6px">Recent errors</h2>
+      <p class="hint" id="err-hint"></p>
+      <table class="err"><tbody id="errors"></tbody></table>
+    </div>
+  </section>
+
+  <section class="card section" id="dirs-card">
+    <h2>Users by directory</h2>
+    <p class="hint">Enrolled = completed Octopus enrollment</p>
+    <table>
+      <thead><tr><th>Directory</th><th>Type</th><th class="n">Users</th><th class="n">Enrolled</th><th class="n">Not enrolled</th><th class="n">Blocked</th><th class="n">Bypass</th><th class="n">Last sync</th></tr></thead>
+      <tbody id="dirs"></tbody>
+    </table>
+  </section>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+(function () {
+  const SNAP = window.__MC_SNAPSHOT__ || null;
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => (n == null ? '–' : Number(n).toLocaleString('en-US'));
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const time = (iso, opts) => iso ? new Date(iso).toLocaleString('en-GB', opts || { hour: '2-digit', minute: '2-digit' }) : '–';
+  let refNow = Date.now();
+  const ago = (iso) => {
+    if (!iso) return '–';
+    const m = Math.round((refNow - new Date(iso)) / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return m + ' min ago';
+    const h = Math.round(m / 60);
+    return h < 48 ? h + ' h ago' : Math.round(h / 24) + ' d ago';
+  };
+  const okIcon = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="var(--good)"/><path d="M4.8 8.2l2.1 2.1 4.3-4.4" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const badIcon = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="var(--critical)"/><path d="M8 4.3v4.6M8 11.2v.1" stroke="#fff" stroke-width="1.9" fill="none" stroke-linecap="round"/></svg>';
+  const warnIcon = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l7 12.5H1z" fill="var(--warning)"/><path d="M8 6v3.6M8 11.6v.1" stroke="#0b0b0b" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg>';
+
+  function render(d) {
+    refNow = d.generatedAt ? new Date(d.generatedAt).getTime() : Date.now();
+    const env = d.environment || {};
+    const hours = (d.window && d.window.hours) || 24;
+    const win = hours >= 48 ? 'last ' + Math.round(hours / 24) + ' days' : 'last ' + hours + ' h';
+    const scope = d.scope || 'all';
+    const isUser = scope === 'user', focused = scope !== 'all';
+    const label = SNAP ? 'status' : 'live status';
+    const fx = d.focus || d.user || {};
+    const who = focused ? (fx.display || fx.key) : null;
+    const noun = { user: 'activity', app: 'application', device: 'workstation' }[scope];
+    document.title = (focused ? who + ' – ' : '') + (env.name || 'Octopus') + ' – ' + label;
+    $('title').textContent = focused ? who + ' — ' + noun : (env.name || 'Octopus') + ' — ' + label;
+    $('subtitle').textContent = [focused ? env.name : null, env.host, env.version ? 'MC ' + env.version : null].filter(Boolean).join(' · ');
+    $('chip').hidden = !focused;
+    if (focused) $('chip-name').innerHTML = '<span class="kind">' + esc({ user: 'User', app: 'App', device: 'Workstation' }[scope]) + '</span>' + esc(who);
+
+    // health pill
+    const comps = (d.system && d.system.components) || [];
+    const down = comps.filter((c) => !c.ok);
+    const pill = $('health-pill');
+    pill.innerHTML = down.length === 0
+      ? '<span class="dot' + (SNAP ? '' : ' live') + '"></span><span>All systems operational</span>'
+      : '<span class="dot warn"></span><span>' + down.length + (down.length > 1 ? ' components need' : ' component needs') + ' attention: ' + esc(down.map((c) => c.name).join(', ')) + '</span>';
+
+    // KPIs
+    const a = d.authentications || {};
+    $('k-auth-label').textContent = 'Authentications, ' + win;
+    $('k-auth').textContent = fmt(a.total);
+    const wsOk = (((a.workstations || {}).Windows || {}).succeeded || 0) + (((a.workstations || {}).macOS || {}).succeeded || 0);
+    const appOk = ((a.applications || {}).succeeded || 0) + ((a.applications || {}).adaptive || 0);
+    const grew = prevTotal != null && a.total > prevTotal ? ' <span class="delta">+' + fmt(a.total - prevTotal) + ' since last update</span>' : '';
+    prevTotal = a.total;
+    $('k-auth-foot').innerHTML = '<b>' + fmt(appOk) + '</b> to applications · <b>' + fmt(wsOk) + '</b> workstation logons'
+      + (a.last24Hours != null ? ' · <b>' + fmt(a.last24Hours) + '</b> in the last 24 h' : '') + grew;
+
+    const u = d.users || {};
+    if (isUser) renderUserTiles(d, win); else if (focused) renderFocusTiles(d, win, scope); else renderGlobalTiles(d, win);
+    const e = d.errors || {};
+
+    const unit = (d.window && d.window.bucket) || 'hour';
+    $('chart-title').textContent = 'Authentications per ' + unit + ', ' + win;
+    drawSeries(a.series || a.hourly || [], unit);
+    drawFeed(a.recent || []);
+    drawToday(a);
+    drawAuthenticators(a);
+    drawApps(a);
+    if (isUser) {
+      drawDevices(d.devices || []);
+      drawAccounts(d.user.accounts || []);
+      const al = (d.user.aliases || []).filter((x) => x !== d.user.key);
+      if (al.length) $('top-hint').textContent = 'Accounts in the Management Console that belong to this user · activity also counted under: ' + al.join(', ');
+    } else if (scope === 'app') {
+      drawDetails('Application details', 'How this service is configured in the Management Console', serviceDetails(fx.service));
+      drawTop(d.topUsers || [], 'Top 5 users of this application');
+    } else if (scope === 'device') {
+      drawDetails('Workstation details', 'Registration in the Management Console', deviceDetails(fx.registrations || []));
+      drawTop(d.topUsers || [], 'Users of this workstation');
+    } else { drawWorkstations(d); drawTop(d.topUsers || []); }
+    drawHealth(comps, e, win);
+    $('dirs-card').hidden = focused;
+    if (!focused) drawDirs(u.directories || []);
+    finish(d);
+  }
+
+  function renderGlobalTiles(d, win) {
+    const u = d.users || {};
+    const pct = u.userCount ? Math.round((u.activeCount / u.userCount) * 100) : 0;
+    $('k-enrolled-label').textContent = 'Enrolled users';
+    $('k-enrolled-bar').parentNode.hidden = false;
+    $('k-enrolled').textContent = fmt(u.activeCount);
+    $('k-enrolled-bar').style.width = pct + '%';
+    const lic = d.license || {};
+    $('k-enrolled-foot').innerHTML = '<b>' + pct + '%</b> of ' + fmt(u.userCount) + ' synced users'
+      + (lic.pool ? ' · license <b>' + fmt(lic.inUse) + '</b> / ' + fmt(lic.pool) : '');
+
+    $('k-active-label').textContent = 'Active users, ' + win;
+    $('k-active').textContent = fmt(u.activeInWindow);
+    $('k-active-foot').innerHTML = u.activeCount ? '<b>' + Math.round((u.activeInWindow / u.activeCount) * 100) + '%</b> of enrolled users signed in' : '';
+
+    const s = d.services || {};
+    $('k-services-label').textContent = 'Protected services';
+    $('k-services').textContent = fmt(s.total);
+    $('k-services-foot').innerHTML = '<b>' + fmt(s.enabledCount) + '</b> enabled · <b>' + fmt(s.inValidCount) + '</b> misconfigured';
+
+    const e = d.errors || {};
+    $('k-err-label').textContent = 'System errors, ' + win;
+    $('k-errors').textContent = fmt(e.errorCount);
+    $('k-errors-foot').innerHTML = (e.errorCount ? warnIcon : okIcon) + '<span>' + fmt(e.failedAuthentications) + ' failed / denied sign-in' + (e.failedAuthentications === 1 ? '' : 's') + ' · ' + fmt(e.warnCount) + ' warning' + (e.warnCount === 1 ? '' : 's') + '</span>';
+  }
+
+  function renderFocusTiles(d, win, scope) {
+    const fx = d.focus || {}, a = d.authentications || {}, e = d.errors || {};
+    $('k-enrolled-bar').parentNode.hidden = true;
+    if (scope === 'app') {
+      const svc = fx.service;
+      $('k-enrolled-label').textContent = 'Service status';
+      $('k-enrolled').textContent = !svc ? '–' : svc.enabled === false ? 'Disabled' : svc.valid === false ? 'Misconfigured' : 'Enabled';
+      $('k-enrolled-foot').innerHTML = svc ? esc([svc.protocol, svc.id != null ? 'service ' + svc.id : null].filter(Boolean).join(' · ')) : 'Not found in the service list';
+    } else {
+      const reg = (fx.registrations || [])[0];
+      $('k-enrolled-label').textContent = 'Operating system';
+      $('k-enrolled').textContent = reg ? osFamily(reg.osName) : (d.devices && d.devices[0] ? d.devices[0].os : '–');
+      $('k-enrolled-foot').innerHTML = reg ? esc([reg.osName, reg.appVersion ? 'agent ' + reg.appVersion : null].filter(Boolean).join(' · ')) : 'Not registered in the MC';
+    }
+    $('k-active-label').textContent = 'Users, ' + win;
+    $('k-active').textContent = fmt((d.users || {}).activeInWindow);
+    $('k-active-foot').innerHTML = '<b>' + fmt(d.activeDays) + '</b> active days' + (a.recent && a.recent[0] ? ' · last ' + ago(a.recent[0].timestamp) : '');
+    const methods = a.byAuthenticator || [], total = methods.reduce((n, r) => n + r.count, 0);
+    const topm = methods.slice().sort((x, y) => y.count - x.count)[0];
+    $('k-services-label').textContent = 'Main authenticator';
+    $('k-services').textContent = topm ? Math.round(topm.count / total * 100) + '%' : '–';
+    $('k-services-foot').innerHTML = topm ? esc(topm.name) : 'No sign-ins';
+    $('k-err-label').textContent = 'Failed sign-ins, ' + win;
+    $('k-errors').textContent = fmt(e.failedAuthentications);
+    $('k-errors-foot').innerHTML = (e.failedAuthentications ? warnIcon : okIcon) + '<span>' + (e.failedAuthentications ? 'Denied or failed MFA requests' : 'No failed sign-ins') + '</span>';
+  }
+  function osFamily(n) { n = String(n || '').toLowerCase(); return n.includes('mac') ? 'macOS' : n.includes('windows') ? 'Windows' : n.includes('linux') ? 'Linux' : (n || '–'); }
+  function serviceDetails(svc) {
+    if (!svc) return [];
+    return [['Name', svc.name], ['Protocol', svc.protocol], ['Type', svc.type], ['Service ID', svc.id],
+      ['Enabled', svc.enabled === false ? 'No' : 'Yes'], ['Configuration', svc.valid === false ? 'Invalid' : 'Valid'],
+      ['Created', svc.created_at ? time(svc.created_at, { dateStyle: 'medium' }) : null]];
+  }
+  function deviceDetails(regs) {
+    if (!regs.length) return [];
+    const r = regs[0];
+    return [['Name', r.name], ['OS', [r.osName, r.osVersion].filter(Boolean).join(' ')], ['Octopus Desk', [r.appName, r.appVersion].filter(Boolean).join(' ')],
+      ['Hardware', [r.manufacturer, r.model].filter((x) => x && x.length < 60).join(' ')], ['TPM', r.tpmActivated ? 'Active ' + (r.tpmVersion || '') : 'Not active'],
+      ['Registered', r.createdAt ? time(r.createdAt, { dateStyle: 'medium' }) : null], ['Last update', r.updatedAt ? ago(r.updatedAt) : null],
+      ['Registrations', regs.length > 1 ? regs.length + ' (re-registered)' : null]];
+  }
+  function drawDetails(title, hint, rows) {
+    $('ws-title').textContent = title;
+    $('ws-hint').textContent = hint;
+    $('ws-split').innerHTML = '';
+    $('ws-foot').textContent = '';
+    rows = rows.filter(([, v]) => v != null && v !== '');
+    $('ws').innerHTML = rows.length ? '<dl class="kv" style="grid-column:1/-1">' + rows.map(([k, v]) => '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>').join('') + '</dl>'
+      : '<div class="empty">No details in the Management Console.</div>';
+  }
+
+  function renderUserTiles(d, win) {
+    const accts = (d.user.accounts || []).filter((x) => !x.error);
+    const enrolled = accts.some((x) => x.status === 'ACTIVE');
+    const blocked = accts.some((x) => x.status === 'BLOCKED');
+    $('k-enrolled-label').textContent = 'Enrollment status';
+    $('k-enrolled').textContent = !accts.length ? '–' : blocked ? 'Blocked' : enrolled ? 'Enrolled' : 'Not enrolled';
+    $('k-enrolled-bar').parentNode.hidden = true;
+    $('k-enrolled-foot').innerHTML = accts.length
+      ? '<b>' + accts.length + '</b> account' + (accts.length > 1 ? 's' : '') + ' · ' + esc([...new Set(accts.map((x) => x.directory))].join(', '))
+        + (accts.some((x) => x.bypass) ? ' · <span class="bad">MFA bypass active</span>' : '')
+      : 'No matching directory account found';
+    $('k-active-label').textContent = 'Active days, ' + win;
+    $('k-active').textContent = fmt(d.activeDays);
+    const lastSeen = (d.authentications.recent || []).find((r) => r.outcome !== 'failed');
+    $('k-active-foot').innerHTML = lastSeen ? 'Last sign-in <b>' + ago(lastSeen.timestamp) + '</b>' : 'No sign-ins in this window';
+    const apps = d.authentications.byService || [];
+    $('k-services-label').textContent = 'Applications used';
+    $('k-services').textContent = fmt(apps.length);
+    $('k-services-foot').innerHTML = apps.length ? 'Most used: <b>' + esc(apps[0].service) + '</b>' : 'No application sign-ins';
+    const e = d.errors || {};
+    $('k-err-label').textContent = 'Failed sign-ins, ' + win;
+    $('k-errors').textContent = fmt(e.failedAuthentications);
+    $('k-errors-foot').innerHTML = (e.failedAuthentications ? warnIcon : okIcon) + '<span>' + (e.failedAuthentications ? 'Denied or failed MFA requests' : 'No failed sign-ins') + '</span>';
+  }
+
+  function finish(d) {
+    const notes = [];
+    if (d.staleError) notes.push('Showing the last good data — latest refresh failed: ' + d.staleError);
+    (d.collectionErrors || []).forEach((m) => notes.push(m));
+    $('banner').style.display = notes.length ? 'block' : 'none';
+    $('banner').innerHTML = notes.map(esc).join('<br>');
+
+    $('footer').innerHTML = 'Window: ' + time(d.window && d.window.start, { dateStyle: 'medium', timeStyle: 'short' }) + ' → '
+      + time(d.window && d.window.end, { dateStyle: 'medium', timeStyle: 'short' }) + ' (your local time) · '
+      + fmt(d.auditRowsScanned) + ' audit events analysed.<br>'
+      + '<b>Authentications</b> = successful “Octopus authentication” events (incl. adaptive / remembered-device sign-ins) plus successful workstation logons and unlocks. '
+      + '<b>Active users</b> = distinct users with at least one successful authentication in the window. '
+      + '<b>System errors</b> = audit events logged at error level.';
+  }
+
+  function drawSeries(rows, unit) {
+    const box = $('hourly');
+    box.querySelectorAll('svg').forEach((n) => n.remove());
+    const W = Math.max(box.clientWidth, 300), H = 220, pl = 34, pr = 6, pt = 10, pb = 24;
+    const totals = rows.map((r) => r.app + r.Windows + r.macOS);
+    const max = Math.max(4, ...totals);
+    const step = niceStep(max / 4);
+    const top = Math.ceil(max / step) * step;
+    const iw = W - pl - pr, ih = H - pt - pb;
+    const band = iw / Math.max(rows.length, 1);
+    const bw = Math.min(24, band * 0.68);
+    const y = (v) => pt + ih - (v / top) * ih;
+    let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Authentications per hour">';
+    for (let v = 0; v <= top; v += step) {
+      svg += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="' + (v === 0 ? 'var(--axis)' : 'var(--grid)') + '" stroke-width="1"/>';
+      svg += '<text x="' + (pl - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + fmt(v) + '</text>';
+    }
+    const every = Math.max(1, Math.ceil(rows.length / (W < 600 ? 6 : 12)));
+    rows.forEach((r, i) => {
+      const x = pl + i * band + (band - bw) / 2;
+      let base = 0;
+      const segs = [['app', 'var(--s-app)'], ['Windows', 'var(--s-win)'], ['macOS', 'var(--s-mac)']].filter(([k]) => r[k] > 0);
+      segs.forEach(([k, c], si) => {
+        const y0 = y(base), y1 = y(base + r[k]);
+        const gap = si > 0 ? 2 : 0;
+        const h = Math.max(y0 - y1 - gap, 1);
+        const isTop = si === segs.length - 1;
+        svg += isTop ? roundTop(x, y1, bw, h, Math.min(4, h), c) : '<rect x="' + x + '" y="' + y1 + '" width="' + bw + '" height="' + h + '" fill="' + c + '"/>';
+        base += r[k];
+      });
+      if (i % every === 0) {
+        svg += '<text x="' + (x + bw / 2) + '" y="' + (H - 6) + '" text-anchor="middle">' + (unit === 'day' ? time(r.start, { day: 'numeric', month: 'short' }) : time(r.start, { hour: '2-digit' })) + '</text>';
+      }
+      svg += '<rect class="hit" data-i="' + i + '" x="' + (pl + i * band) + '" y="' + pt + '" width="' + band + '" height="' + ih + '" fill="transparent"/>';
+    });
+    svg += '</svg>';
+    box.insertAdjacentHTML('beforeend', svg);
+    const tip = $('tip');
+    box.querySelectorAll('.hit').forEach((el) => {
+      el.addEventListener('mouseenter', () => {
+        const r = rows[+el.dataset.i];
+        const end = new Date(new Date(r.start).getTime() + 3600e3).toISOString();
+        const head = unit === 'day' ? time(r.start, { weekday: 'short', day: 'numeric', month: 'short' }) : time(r.start) + '–' + time(end);
+        tip.innerHTML = '<div style="color:var(--ink-2);margin-bottom:4px">' + head + '</div>'
+          + [['Applications', 'var(--s-app)', r.app], ['Windows', 'var(--s-win)', r.Windows], ['macOS', 'var(--s-mac)', r.macOS]]
+            .map(([n, c, v]) => '<div class="row"><i style="background:' + c + '"></i>' + n + '<b>' + fmt(v) + '</b></div>').join('')
+          + '<div class="row" style="margin-top:3px;border-top:1px solid var(--grid);padding-top:3px">Total<b>' + fmt(r.app + r.Windows + r.macOS) + '</b></div>';
+        const bx = box.getBoundingClientRect(), ex = el.getBoundingClientRect();
+        const left = ex.left - bx.left + ex.width / 2;
+        tip.style.left = Math.min(Math.max(left - tip.offsetWidth / 2, 0), bx.width - tip.offsetWidth) + 'px';
+        tip.style.top = '0px';
+        tip.style.opacity = 1;
+      });
+      el.addEventListener('mouseleave', () => { tip.style.opacity = 0; });
+    });
+  }
+  function roundTop(x, y, w, h, r, c) {
+    return '<path d="M' + x + ',' + (y + h) + 'V' + (y + r) + 'Q' + x + ',' + y + ' ' + (x + r) + ',' + y + 'H' + (x + w - r) + 'Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + r) + 'V' + (y + h) + 'Z" fill="' + c + '"/>';
+  }
+  function niceStep(raw) {
+    const p = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1))));
+    const n = raw / p;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p;
+  }
+
+  let seen = new Set();
+  function drawFeed(rows) {
+    const color = { app: 'var(--s-app)', Windows: 'var(--s-win)', macOS: 'var(--s-mac)' };
+    if (!rows.length) { $('feed').innerHTML = '<div class="empty">No authentications yet.</div>'; return; }
+    const first = seen.size === 0;
+    $('feed').innerHTML = rows.map((r) => {
+      const id = r.timestamp + r.user + r.detail;
+      const fresh = !first && !seen.has(id) && !SNAP;
+      const what = r.kind === 'app' ? esc(r.detail) : esc(r.detail) + ' workstation';
+      const sw = r.kind === 'app' ? color.app : color[r.detail];
+      const state = r.outcome === 'failed' ? '<span class="o bad">Failed</span>' : '<span class="o">' + ago(r.timestamp) + '</span>';
+      const out = '<span class="meta-r">' + (r.authenticator ? '<span class="via">' + esc(r.authenticator) + '</span>' : '') + state + '</span>';
+      const sameDay = new Date(r.timestamp).toDateString() === new Date(refNow).toDateString();
+      const when = sameDay ? time(r.timestamp) : time(r.timestamp, { day: 'numeric', month: 'short' });
+      return '<div class="item' + (fresh ? ' fresh' : '') + '"><span class="t" title="' + esc(time(r.timestamp, { dateStyle: 'medium', timeStyle: 'short' })) + '">' + when + '</span><i class="sw" style="background:' + sw + '"></i>'
+        + '<span class="what"><b>' + esc(r.user) + '</b> <span>→ ' + what + '</span></span>' + out + '</div>';
+    }).join('');
+    seen = new Set(rows.map((r) => r.timestamp + r.user + r.detail));
+  }
+  function drawToday(a) {
+    const rows = a.series || [];
+    const t = rows[rows.length - 1] || { app: 0, Windows: 0, macOS: 0 };
+    $('today-hint').textContent = fmt(a.today) + ' successful authentications since midnight · ' + fmt(a.last15Minutes) + ' in the last 15 min';
+    $('today').innerHTML = [['Applications', 'var(--s-app)', t.app], ['Windows', 'var(--s-win)', t.Windows], ['macOS', 'var(--s-mac)', t.macOS]]
+      .map(([k, c, v]) => '<div class="os"><div class="k"><i style="background:' + c + '"></i>' + k + '</div><div class="v">' + fmt(v) + '</div></div>').join('');
+  }
+
+  function drawAuthenticators(a) {
+    const rows = a.byAuthenticator || [];
+    const total = rows.reduce((n, r) => n + r.count, 0);
+    if (!rows.length) { $('authenticators').innerHTML = '<div class="empty">No sign-ins in this window.</div>'; return; }
+    const max = Math.max(...rows.map((r) => r.count));
+    $('authenticators').innerHTML = rows.map((r) => '<div class="bar-row" title="' + esc(r.name) + ': ' + fmt(r.count) + ' sign-ins">'
+      + '<div class="name">' + esc(r.name) + '</div>'
+      + '<div class="track"><div class="fill method" style="width:' + (r.count / max * 100) + '%"></div></div>'
+      + '<div class="num">' + fmt(r.count) + ' <small style="color:var(--muted)">' + Math.round(r.count / total * 100) + '%</small></div></div>').join('');
+  }
+
+  function drawApps(a) {
+    const rows = (a.byService || []).slice(0, 10);
+    const ap = a.applications || {};
+    $('apps-hint').textContent = fmt(ap.total) + ' application sign-ins · ' + fmt(ap.adaptive) + ' adaptive (trusted device) · ' + fmt(ap.failed) + ' failed';
+    if (!rows.length) { $('apps').innerHTML = '<div class="empty">No application sign-ins in this window.</div>'; return; }
+    const max = Math.max(...rows.map((r) => r.total));
+    const how = (r) => Object.entries(r.authenticators || {}).sort((x, y) => y[1] - x[1]).map(([k, n]) => k + ' ' + n).join(', ');
+    $('apps').innerHTML = rows.map((r) => '<div class="bar-row' + (SNAP ? '' : ' link') + '" data-focus="app" data-key="' + esc(r.service) + '" title="' + esc(r.service) + ': ' + r.succeeded + ' succeeded, ' + r.adaptive + ' adaptive, ' + r.failed + ' failed' + (how(r) ? ' — ' + esc(how(r)) : '') + '">'
+      + '<div class="name">' + esc(r.service) + '</div>'
+      + '<div class="track"><div class="fill" style="width:' + (r.total / max * 100) + '%"></div></div>'
+      + '<div class="num">' + fmt(r.total) + (r.failed ? '<small>' + r.failed + ' failed</small>' : '') + '</div></div>').join('');
+  }
+
+  function drawWorkstations(d) {
+    $('ws-title').textContent = 'Workstations';
+    $('ws-hint').textContent = 'Registered machines running Octopus Desk, and how many signed in during the window';
+    const w = d.workstations || {}, by = w.byOs || {}, act = w.activeInWindow || {};
+    const aw = (d.authentications || {}).workstations || {};
+    const items = [['macOS', 'var(--s-mac)'], ['Windows', 'var(--s-win)'], ['Linux', 'var(--s-linux)']];
+    $('ws').innerHTML = items.map(([k, c]) => '<div class="os"><div class="k"><i style="background:' + c + '"></i>' + k + '</div>'
+      + '<div class="v">' + fmt(by[k] || 0) + '</div>'
+      + '<div class="f">' + (k === 'Linux' ? 'servers / gateways' : fmt(act[k] || 0) + ' active · ' + fmt((aw[k] || {}).succeeded || 0) + ' logons') + '</div></div>').join('');
+    const total = items.reduce((n, [k]) => n + (by[k] || 0), 0) || 1;
+    $('ws-split').innerHTML = items.filter(([k]) => by[k]).map(([k, c]) => '<span title="' + k + ': ' + by[k] + '" style="flex:' + by[k] + ';background:' + c + '"></span>').join('');
+    $('ws-foot').textContent = fmt(w.registered) + ' registered workstations · ' + items.filter(([k]) => by[k]).map(([k]) => k + ' ' + Math.round(by[k] / total * 100) + '%').join(' · ');
+  }
+
+  function drawDevices(rows) {
+    $('ws-title').textContent = 'Workstations used';
+    $('ws-hint').textContent = 'Machines this user signed in to with Octopus Desk during the window';
+    $('ws-split').innerHTML = '';
+    $('ws-foot').textContent = '';
+    const color = { Windows: 'var(--s-win)', macOS: 'var(--s-mac)' };
+    $('ws').innerHTML = rows.length ? rows.map((r) => '<div class="os' + (SNAP ? '' : ' link') + '" data-focus="device" data-key="' + esc(r.name) + '"><div class="k"><i style="background:' + color[r.os] + '"></i>' + esc(r.os) + '</div>'
+      + '<div class="v" style="font-size:16px;word-break:break-all">' + esc(r.name.replace(/\.doubleoctopus\.com$/i, '')) + '</div>'
+      + '<div class="f">' + fmt(r.count) + ' logons · last ' + ago(r.last) + '</div></div>').join('')
+      : '<div class="empty">No workstation logons in this window.</div>';
+  }
+  function drawAccounts(rows) {
+    $('top-title').textContent = 'Directory accounts';
+    $('top-hint').textContent = 'Accounts in the Management Console that belong to this user';
+    $('top-head').innerHTML = '<tr><th>Directory</th><th>Username</th><th>Status</th><th class="n">Last MC activity</th></tr>';
+    const status = (x) => x.status === 'ACTIVE' ? '<span class="tag good">Enrolled</span>' : x.status === 'BLOCKED' ? '<span class="tag bad">Blocked</span>'
+      : '<span class="tag">' + esc((x.status || '').toLowerCase().replace(/^./, (c) => c.toUpperCase()) || '–') + '</span>';
+    $('top').innerHTML = rows.length ? rows.map((x) => x.error
+      ? '<tr><td colspan="4" class="empty">Could not look up accounts: ' + esc(x.error) + '</td></tr>'
+      : '<tr><td class="who">' + esc(x.directory) + '</td><td>' + esc(x.username) + '<div style="color:var(--muted);font-size:12px">' + esc(x.email || '') + '</div></td>'
+        + '<td>' + status(x) + (x.bypass ? ' <span class="tag bad">Bypass</span>' : '') + '</td><td class="n" style="color:var(--muted)">' + (x.activityAt ? ago(x.activityAt) : '–') + '</td></tr>').join('')
+      : '<tr><td colspan="4" class="empty">No matching accounts.</td></tr>';
+  }
+
+  function drawTop(rows, title) {
+    $('top-title').textContent = title || 'Top 5 active users';
+    $('top-hint').textContent = 'Ranked by successful authentications in the window' + (SNAP ? '' : ' · click a name to see their activity');
+    $('top-head').innerHTML = '<tr><th></th><th>User</th><th class="n">Apps</th><th class="n">Workstation</th><th class="n">Total</th><th class="n">Last seen</th></tr>';
+    if (!rows.length) { $('top').innerHTML = '<tr><td colspan="6" class="empty">No user activity in this window.</td></tr>'; return; }
+    const max = Math.max(...rows.map((r) => r.total));
+    $('top').innerHTML = rows.map((r, i) => '<tr><td class="rank">' + (i + 1) + '</td>'
+      + '<td><div class="who">' + (SNAP ? esc(r.display) : '<a href="?user=' + encodeURIComponent(r.user) + '" data-user="' + esc(r.user) + '" style="color:inherit">' + esc(r.display) + '</a>') + '</div><div class="mini" style="width:' + (r.total / max * 100) + '%">'
+      + (r.app ? '<span style="flex:' + r.app + ';background:var(--s-app)"></span>' : '')
+      + (r.workstation ? '<span style="flex:' + r.workstation + ';background:var(--axis)"></span>' : '') + '</div></td>'
+      + '<td class="n">' + fmt(r.app) + '</td><td class="n">' + fmt(r.workstation) + '</td><td class="n"><b>' + fmt(r.total) + '</b></td>'
+      + '<td class="n" style="color:var(--muted)">' + ago(r.lastSeen) + '</td></tr>').join('');
+  }
+
+  function drawHealth(comps, e, win) {
+    const sorted = comps.slice().sort((x, y) => x.ok - y.ok);
+    $('health').innerHTML = sorted.length ? sorted.map((c) => '<div' + (c.ok ? '' : ' class="bad"') + '>' + (c.ok ? okIcon : badIcon) + '<span>' + esc(c.name)
+      + (c.ok ? '' : ' — <span class="m" style="display:inline">' + esc(c.message) + '</span>'
+        + ((c.failing || []).length ? '<span class="m">' + esc(c.failing.join(', ')) + '</span>' : '')) + '</span></div>').join('')
+      : '<div class="empty">Status unavailable</div>';
+    const rows = e.recent || [];
+    $('err-hint').textContent = rows.length ? 'Latest ' + rows.length + ' of ' + fmt(e.errorCount) + ' error events, ' + win : 'No error events, ' + win;
+    $('errors').innerHTML = rows.map((r) => '<tr><td>' + time(r.timestamp, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) + '</td>'
+      + '<td><div>' + esc(r.action) + '</div><div class="msg">' + esc(cleanMsg(r.message)) + '</div></td></tr>').join('');
+  }
+  function cleanMsg(m) {
+    m = String(m || '');
+    const t = m.match(/<title>([^<]+)<\/title>/i);
+    return t ? t[1] : m.length > 140 ? m.slice(0, 140) + '…' : m;
+  }
+
+  function drawDirs(rows) {
+    $('dirs').innerHTML = rows.map((d) => '<tr><td class="who">' + esc(d.name) + '</td><td style="color:var(--muted)">' + esc(d.type) + '</td>'
+      + '<td class="n">' + fmt(d.userCount) + '</td><td class="n"><b>' + fmt(d.activeCount) + '</b></td><td class="n">' + fmt((d.inactiveCount || 0) + (d.pendingCount || 0)) + '</td>'
+      + '<td class="n">' + fmt(d.blockedCount) + '</td><td class="n">' + fmt(d.bypassCount) + '</td>'
+      + '<td class="n" style="color:var(--muted)">' + (d.lastSync ? ago(d.lastSync) : '–') + '</td></tr>').join('');
+  }
+
+  // ---- data loop ----
+  let last = null, nextAt = 0, prevTotal = null;
+  let timer = null, busy = false;
+  const FOCUS = ['user', 'app', 'device'];
+  const readFocus = () => { const p = new URLSearchParams(location.search); const t = FOCUS.find((k) => p.get(k)); return t ? { type: t, key: p.get(t) } : null; };
+  let focus = readFocus();
+  const userQS = () => focus ? '?' + focus.type + '=' + encodeURIComponent(focus.key) : '';
+  const isLocal = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+  function tick() {
+    if (SNAP) return;
+    if (busy) { $('updated').textContent = 'Refreshing…'; return; }
+    const s = Math.max(0, Math.round((nextAt - Date.now()) / 1000));
+    const left = s >= 60 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : s + 's';
+    $('updated').textContent = last ? 'Updated ' + time(last.generatedAt, { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · next refresh in ' + left : '';
+  }
+  function schedule(ms) {
+    clearTimeout(timer);
+    nextAt = Date.now() + ms;
+    timer = setTimeout(() => load(), ms);
+  }
+  function showBanner(html) {
+    $('banner').style.display = 'block';
+    $('banner').innerHTML = html;
+  }
+  async function load(manual) {
+    busy = true;
+    $('refresh').disabled = true;
+    tick();
+    try {
+      const res = manual
+        ? await fetch('api/refresh' + userQS(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}', cache: 'no-store' })
+        : await fetch('api/stats' + userQS(), { cache: 'no-store' });
+      const body = await res.json();
+      if (res.status === 503 && body.needsConfig) {
+        $('subtitle').textContent = 'Not connected to a Management Console yet';
+        showBanner(body.canConfigure
+          ? 'The dashboard isn’t configured yet. Open <a href="settings">Settings</a> to enter the MC host and API client.'
+          : 'The dashboard isn’t configured yet. Ask the administrator to finish setup.');
+        return schedule(15000);
+      }
+      if (res.status === 503 && body.loading) {
+        $('subtitle').textContent = 'Loading the last month of authentications from the Management Console…';
+        return schedule(5000);
+      }
+      if (!res.ok) throw new Error(body.error || res.statusText);
+      last = body;
+      render(body);
+    } catch (err) {
+      showBanner(esc('Could not refresh live data: ' + err.message + (last ? ' — showing the previous update.' : '')));
+    } finally {
+      busy = false;
+      $('refresh').disabled = false;
+    }
+    schedule(((last && last.refreshSeconds) || 300) * 1000);
+  }
+
+  function selectFocus(type, key) {
+    focus = key ? { type, key } : null;
+    const url = new URL(location.href);
+    FOCUS.forEach((k) => url.searchParams.delete(k));
+    if (focus) url.searchParams.set(type, key);
+    history.pushState(null, '', url);
+    prevTotal = null;
+    seen = new Set();
+    $('q').value = '';
+    closeSuggest();
+    window.scrollTo({ top: 0 });
+    load();
+  }
+  function closeSuggest() { $('suggest').classList.remove('open'); $('q').setAttribute('aria-expanded', 'false'); }
+  function setupSearch() {
+    $('searchbar').hidden = false;
+    const q = $('q'), box = $('suggest');
+    let t, items = [], active = -1;
+    const paint = () => {
+      const label = { user: 'User', app: 'App', device: 'Workstation' };
+      box.innerHTML = items.length ? items.map((u, i) => '<button type="button" role="option" data-i="' + i + '" class="' + (i === active ? 'active' : '') + '">'
+        + '<span><span class="kind">' + label[u.type || 'user'] + '</span><b>' + esc(u.display) + '</b>' + (u.type === 'user' && u.display !== u.key ? ' <small>' + esc(u.key) + '</small>' : '') + '</span>'
+        + '<small>' + (u.events ? fmt(u.events) + ' sign-ins' : esc((u.status || 'no activity').toLowerCase())) + '</small></button>').join('')
+        : '<div class="empty" style="padding:8px 10px">No matching users, applications or workstations</div>';
+      box.classList.add('open');
+      q.setAttribute('aria-expanded', 'true');
+    };
+    q.addEventListener('input', () => {
+      clearTimeout(t);
+      const v = q.value.trim();
+      if (!v) { closeSuggest(); return; }
+      t = setTimeout(async () => {
+        try {
+          const res = await fetch('api/search?q=' + encodeURIComponent(v), { cache: 'no-store' });
+          items = await res.json(); active = -1; paint();
+        } catch (err) { items = []; paint(); }
+      }, 200);
+    });
+    q.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' && items.length) { active = (active + 1) % items.length; paint(); e.preventDefault(); }
+      else if (e.key === 'ArrowUp' && items.length) { active = (active - 1 + items.length) % items.length; paint(); e.preventDefault(); }
+      else if (e.key === 'Enter') { e.preventDefault(); const pick = items[active >= 0 ? active : 0]; if (pick) selectFocus(pick.type || 'user', pick.key); else if (q.value.trim()) selectFocus('user', q.value.trim()); }
+      else if (e.key === 'Escape') closeSuggest();
+    });
+    box.addEventListener('mousedown', (e) => { const b = e.target.closest('button[data-i]'); if (b) { e.preventDefault(); const it = items[+b.dataset.i]; selectFocus(it.type || 'user', it.key); } });
+    q.addEventListener('blur', () => setTimeout(closeSuggest, 120));
+    $('clear').addEventListener('click', () => selectFocus(null, ''));
+    document.addEventListener('click', (e) => {
+      if (e.metaKey || e.ctrlKey) return;
+      const a = e.target.closest('a[data-user]');
+      if (a) { e.preventDefault(); return selectFocus('user', a.dataset.user); }
+      const f = e.target.closest('[data-focus]');
+      if (f) selectFocus(f.dataset.focus, f.dataset.key);
+    });
+    window.addEventListener('popstate', () => { focus = readFocus(); prevTotal = null; load(); });
+  }
+
+  if (SNAP) {
+    render(SNAP);
+    $('updated').textContent = 'Snapshot taken ' + time(SNAP.generatedAt, { dateStyle: 'medium', timeStyle: 'short' });
+  } else {
+    const dl = $('dl');
+    dl.hidden = false;
+    $('refresh').hidden = false;
+    $('refresh').addEventListener('click', () => { if (!busy) load(true); });
+    $('settings').hidden = !isLocal;
+    const toHealth = () => $('health-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('health-pill').addEventListener('click', toHealth);
+    $('health-pill').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toHealth(); } });
+    dl.addEventListener('click', () => { location.href = 'snapshot.html' + userQS(); });
+    setupSearch();
+    load();
+    setInterval(tick, 1000);
+  }
+  let rt;
+  window.addEventListener('resize', () => {
+    clearTimeout(rt);
+    rt = setTimeout(() => { const d = SNAP || last; if (d) render(d); }, 150);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "host": "secret.doubleoctopus.io",
+  "environmentName": "Octopus Production",
+  "clientId": "<API client ID from MC > Security > Clients>",
+  "clientSecret": "<client secret>",
+  "tokenAuthMethod": "client_secret_post",
+  "windowDays": 30,
+  "refreshSeconds": 300,
+  "timezone": "Asia/Jerusalem",
+  "bind": "127.0.0.1",
+  "port": 8088,
+  "viewKey": ""
+}
