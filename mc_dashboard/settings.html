@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard Settings</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --ring: rgba(11,11,11,0.10); --field: #ffffff; --accent: #2a78d6;
+  --good: #0ca30c; --good-text: #006300; --critical: #d03b3b; --critical-text: #b42a2a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --ring: rgba(255,255,255,0.10); --field: #121211; --accent: #3987e5;
+    --good-text: #0ca30c; --critical-text: #e66767;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --ring: rgba(255,255,255,0.10); --field: #121211; --accent: #3987e5;
+  --good-text: #0ca30c; --critical-text: #e66767;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+header { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+h1 { font-size: 22px; font-weight: 650; margin: 0; }
+.sub { color: var(--ink-2); margin-top: 2px; }
+a { color: var(--accent); }
+.card { background: var(--surface); border-radius: 12px; box-shadow: inset 0 0 0 1px var(--ring); padding: 18px 20px; margin-bottom: 16px; }
+.card h2 { font-size: 14px; font-weight: 600; margin: 0 0 2px; }
+.card .hint { color: var(--muted); font-size: 12.5px; margin: 0 0 14px; }
+.row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.row .full { grid-column: 1 / -1; }
+@media (max-width: 600px) { .row { grid-template-columns: minmax(0, 1fr); } }
+label { display: block; font-size: 13px; font-weight: 550; margin-bottom: 5px; }
+label small { font-weight: 400; color: var(--muted); }
+input, select { width: 100%; font: inherit; color: var(--ink); background: var(--field); border: 0; box-shadow: inset 0 0 0 1px var(--ring); border-radius: 8px; padding: 8px 10px; }
+input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.inline { display: flex; gap: 8px; }
+.inline input { flex: 1; }
+.help { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+button { font: inherit; border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer; background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1px var(--ring); }
+button.primary { background: var(--accent); color: #fff; box-shadow: none; font-weight: 600; }
+button:disabled { opacity: .6; cursor: progress; }
+.result { margin-top: 14px; font-size: 13px; display: none; }
+.result.show { display: block; }
+.ok { color: var(--good-text); }
+.bad { color: var(--critical-text); }
+.probe { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; }
+.probe b { min-width: 110px; font-weight: 550; }
+.foot { color: var(--muted); font-size: 12px; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Dashboard settings</h1>
+      <div class="sub">Only available on the machine running the dashboard</div>
+    </div>
+    <a href="./">← Back to dashboard</a>
+  </header>
+
+  <form id="form" autocomplete="off">
+    <section class="card">
+      <h2>Management Console connection</h2>
+      <p class="hint">Create an API client in the MC under Security → Clients. It only needs read access.</p>
+      <div class="row">
+        <div><label for="environmentName">Display name</label><input id="environmentName" name="environmentName" placeholder="Octopus Production"></div>
+        <div><label for="host">MC host</label><input id="host" name="host" placeholder="secret.doubleoctopus.io" required></div>
+        <div><label for="clientId">Client ID</label><input id="clientId" name="clientId" spellcheck="false" required></div>
+        <div>
+          <label for="clientSecret">Client secret <small id="secret-state"></small></label>
+          <input id="clientSecret" name="clientSecret" type="password" spellcheck="false" autocomplete="new-password">
+          <div class="help">Stored in the config file on this machine (owner-only permissions). It's never shown again.</div>
+        </div>
+        <div>
+          <label for="tokenAuthMethod">Token authentication</label>
+          <select id="tokenAuthMethod" name="tokenAuthMethod">
+            <option value="client_secret_post">Client secret in request body (default)</option>
+            <option value="client_secret_basic">HTTP Basic</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:16px">
+        <button type="button" id="test">Test connection</button>
+      </div>
+      <div class="result" id="test-result"></div>
+    </section>
+
+    <section class="card">
+      <h2>Data and refresh</h2>
+      <p class="hint">The first load reads the whole window. After that, only new events are fetched.</p>
+      <div class="row">
+        <div>
+          <label for="windowDays">Time window</label>
+          <select id="windowDays" name="windowDays">
+            <option value="1">Last 24 hours</option>
+            <option value="7">Last 7 days</option>
+            <option value="14">Last 14 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="60">Last 60 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+        </div>
+        <div>
+          <label for="refreshSeconds">Automatic refresh</label>
+          <select id="refreshSeconds" name="refreshSeconds">
+            <option value="60">Every minute</option>
+            <option value="120">Every 2 minutes</option>
+            <option value="300">Every 5 minutes (recommended)</option>
+            <option value="600">Every 10 minutes</option>
+            <option value="900">Every 15 minutes</option>
+            <option value="1800">Every 30 minutes</option>
+          </select>
+          <div class="help">Use “Refresh now” on the dashboard when you need the current numbers.</div>
+        </div>
+        <div><label for="timezone">Time zone <small>(day boundaries)</small></label><input id="timezone" name="timezone" placeholder="Asia/Jerusalem"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Sharing</h2>
+      <p class="hint">How management opens the live view from other computers</p>
+      <div class="row">
+        <div>
+          <label for="bind">Listen on</label>
+          <select id="bind" name="bind">
+            <option value="127.0.0.1">This computer only</option>
+            <option value="0.0.0.0">Office network</option>
+          </select>
+        </div>
+        <div><label for="port">Port</label><input id="port" name="port" type="number" min="1" max="65535"></div>
+        <div class="full">
+          <label for="viewKey">Access key <small>(required in the link when shared on the network)</small></label>
+          <div class="inline"><input id="viewKey" name="viewKey" spellcheck="false"><button type="button" id="gen">Generate</button></div>
+          <div class="help" id="share-link"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button type="submit" class="primary" id="save">Save settings</button>
+      <span id="save-result"></span>
+    </div>
+    <p class="foot" id="path"></p>
+  </form>
+</div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fields = ['environmentName', 'host', 'clientId', 'clientSecret', 'tokenAuthMethod', 'windowDays', 'refreshSeconds', 'timezone', 'bind', 'port', 'viewKey'];
+  const numeric = ['windowDays', 'refreshSeconds', 'port'];
+
+  function ensureOption(sel, value) {
+    if (sel.tagName !== 'SELECT' || [...sel.options].some((o) => o.value === String(value))) return;
+    const o = document.createElement('option');
+    o.value = value; o.textContent = value;
+    sel.appendChild(o);
+  }
+  function fill(cfg) {
+    fields.forEach((f) => {
+      if (f === 'clientSecret') return;
+      const el = $(f);
+      if (cfg[f] == null) return;
+      ensureOption(el, cfg[f]);
+      el.value = cfg[f];
+    });
+    $('clientSecret').value = '';
+    $('clientSecret').placeholder = cfg.clientSecretSet ? '•••••••• saved — leave blank to keep' : 'Paste the client secret';
+    $('secret-state').textContent = cfg.clientSecretSet ? '(saved)' : '(not set)';
+    $('path').textContent = 'Saved to ' + cfg.configPath;
+    shareLink();
+  }
+  function values() {
+    const out = {};
+    fields.forEach((f) => { out[f] = numeric.includes(f) ? Number($(f).value) : $(f).value.trim(); });
+    if (!out.clientSecret) delete out.clientSecret;
+    return out;
+  }
+  function shareLink() {
+    const key = $('viewKey').value.trim();
+    const open = $('bind').value === '0.0.0.0';
+    $('share-link').innerHTML = open
+      ? 'Share: <b>http://&lt;this-computer’s-name-or-IP&gt;:' + esc($('port').value) + '/' + (key ? '?key=' + esc(key) : '') + '</b>'
+        + (key ? '' : ' <span class="bad">— set an access key before sharing on the network</span>')
+      : 'Only this computer can open the dashboard.';
+  }
+  async function post(path, body) {
+    const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await res.json().catch(() => ({ error: res.statusText }));
+    return { ok: res.ok, data };
+  }
+
+  $('gen').addEventListener('click', () => {
+    const b = new Uint8Array(12);
+    crypto.getRandomValues(b);
+    $('viewKey').value = [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+    shareLink();
+  });
+  ['bind', 'port', 'viewKey'].forEach((f) => $(f).addEventListener('input', shareLink));
+
+  $('test').addEventListener('click', async () => {
+    const btn = $('test'), out = $('test-result');
+    btn.disabled = true; btn.textContent = 'Testing…';
+    out.className = 'result show'; out.textContent = 'Requesting a token from ' + $('host').value + '…';
+    try {
+      const { ok, data } = await post('api/config/test', values());
+      if (!ok || data.error) {
+        out.innerHTML = '<span class="bad">✕ ' + esc(data.error || 'Test failed') + '</span>';
+      } else {
+        const v = data.version && (data.version.version || data.version);
+        out.innerHTML = (data.ok ? '<div class="ok">✓ Connected — MC ' + esc(typeof v === 'string' ? v : '') + '</div>' : '<div class="bad">Connected, but some data is not readable by this API client:</div>')
+          + Object.entries(data.access || {}).map(([k, s]) => '<div class="probe"><b>' + esc(k) + '</b><span class="' + (s === 'ok' ? 'ok' : 'bad') + '">' + esc(s === 'ok' ? 'readable' : s) + '</span></div>').join('');
+      }
+    } catch (err) {
+      out.innerHTML = '<span class="bad">✕ ' + esc(err.message) + '</span>';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Test connection';
+    }
+  });
+
+  $('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('save'), out = $('save-result');
+    btn.disabled = true; out.textContent = 'Saving…'; out.className = '';
+    try {
+      const { ok, data } = await post('api/config', values());
+      if (!ok) throw new Error(data.error || 'Save failed');
+      fill(data.config);
+      out.className = 'ok';
+      out.textContent = '✓ Saved. The dashboard is reloading data now.'
+        + (data.restartNeeded && data.restartNeeded.length ? ' Restart the server to apply: ' + data.restartNeeded.join(', ') + '.' : '');
+    } catch (err) {
+      out.className = 'bad'; out.textContent = '✕ ' + err.message;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  fetch('api/config', { cache: 'no-store' }).then((r) => r.json()).then(fill)
+    .catch((err) => { $('save-result').className = 'bad'; $('save-result').textContent = 'Could not load settings: ' + err.message; });
+})();
+</script>
+</body>
+</html>
